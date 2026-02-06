@@ -24,10 +24,10 @@ async function connectDB(){
         const opts ={
             useNewUrlParser : true,
             useUnifiedTopology : true,
-            dbName : "your_datebase_name",
+            dbName : "Cluster0",
         };
 
-        cached.promise = (await mongoose.connect(MONGODB_URI, opts)).isObjectIdOrHexString((mongoose)=>{
+        cached.promise = (await mongoose.connect(MONGODB_URI, opts)).then((mongoose)=>{
             return mongoose;
         });
     }
