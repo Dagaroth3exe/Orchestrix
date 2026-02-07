@@ -1,6 +1,6 @@
 "use client";
 
-import WebcamPixelGrid from "@/app/api/components/WebcamPixelGrid";
+import WebcamPixelGrid from "@/app/components/WebcamPixelGrid";
 
 export default function PixelBackground() {
   return (
