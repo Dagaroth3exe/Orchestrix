@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Lora, Outfit } from "next/font/google";
 import "./globals.css";
+import PixelBackground from "./components/PixelBackground";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -26,7 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} ${lora.variable} antialiased`}>
-        {children}
+        <div className="relative min-h-screen w-full overflow-hidden">
+          <PixelBackground />
+          <div className="relative z-20 min-h-screen">{children}</div>
+        </div>
       </body>
     </html>
   );
