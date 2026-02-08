@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import FullWhitelogo from "../Assets/FullWhitelogo.png";
 
 
+
 const IntroPage = () => {
     return (
         <>
@@ -26,6 +27,7 @@ const IntroPage = () => {
                 >
                     Orchestrate everything like <br/>  magic.
                 </motion.h1>
+
             </div>
         </>
     );
