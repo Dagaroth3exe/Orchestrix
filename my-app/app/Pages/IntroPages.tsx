@@ -1,10 +1,19 @@
 "use client";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import FullWhitelogo from "../Assets/FullWhitelogo.png";
-
+import { useEffect, useState } from "react";
+import { LoginForm } from "@/components/login-form";
 
 
 const IntroPage = () => {
+
+    const [showLogin, setShowLogin] = useState(false);
+    useEffect(()=>{
+        const timer = setTimeout(()=>setShowLogin(true),3500);
+        return()=>clearTimeout(timer);
+    },[]);
+
+
     return (
         <>
             <div className="min-h-screen w-full flex items-center justify-center flex-col gap-10 px-6 text-center">
@@ -12,21 +21,37 @@ const IntroPage = () => {
                     className="-mt-4 h-14 w-44 sm:h-20 sm:w-72 md:h-24 md:w-96 bg-contain bg-center bg-no-repeat"
                     style={{ backgroundImage: `url(${FullWhitelogo.src})` }}
                     initial={{ opacity: 0, y: 0 }}
-                    animate={{ opacity: 1, y: -24 }}
+                    animate={{ opacity: 1, y: showLogin ? -60 : -24 }}
                     transition={{
                         opacity: { duration: 0.6, ease: "easeOut" },
-                        y: { duration: 0.5, ease: "easeInOut", delay: 2.2 },
+                        y: { duration: 0.6, ease: "easeInOut", delay: showLogin ? 0 : 2.2 },
                     }}
                 />
-                <motion.h1
-                    className="text-2xl text-center text-amber-50 max-w-xl whitespace-pre-line"
-                    style={{ fontFamily: "var(--font-lora)" }}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: "easeOut", delay: 2.8 }}
-                >
-                    Orchestrate everything like <br/>  magic.
-                </motion.h1>
+                <AnimatePresence mode="wait">
+                    {!showLogin ? (
+                        <motion.h1
+                            key="tagline"
+                            className="text-2xl text-center text-amber-50 max-w-xl whitespace-pre-line"
+                            style={{ fontFamily: "var(--font-lora)" }}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.6, ease: "easeOut", delay: 2.8 }}
+                        >
+                            Orchestrate everything like <br /> magic.
+                        </motion.h1>
+                    ) : (
+                        <motion.div
+                            key="login"
+                            className="w-full max-w-2xl"
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                        >
+                            <LoginForm />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
             </div>
         </>
