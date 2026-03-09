@@ -21,13 +21,11 @@ async function connectDB(){
     }
 
     if(!cached.promise){
-        const opts ={
-            useNewUrlParser : true,
-            useUnifiedTopology : true,
-            dbName : "Cluster0",
+        const opts = {
+            dbName: "Cluster0",
         };
 
-        cached.promise = (await mongoose.connect(MONGODB_URI, opts)).then((mongoose)=>{
+        cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
             return mongoose;
         });
     }

@@ -21,6 +21,49 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const [mode, setMode] = useState<"login" | "register">("login")
 
+  // Login fields
+  const [loginEmail, setLoginEmail] = useState("")
+  const [loginPassword, setLoginPassword] = useState("")
+  const [loginError, setLoginError] = useState("")
+
+  // Register fields
+  const [regName, setRegName] = useState("")
+  const [regEmail, setRegEmail] = useState("")
+  const [regPassword, setRegPassword] = useState("")
+  const [regError, setRegError] = useState("")
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLoginError("")
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+    })
+    if (res.ok) {
+      window.location.href = "/dashboard"
+    } else {
+      const data = await res.json()
+      setLoginError(data.error || "Login failed")
+    }
+  }
+
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault()
+    setRegError("")
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: regName, email: regEmail, password: regPassword }),
+    })
+    if (res.ok) {
+      setMode("login")
+    } else {
+      const data = await res.json()
+      setRegError(data.error || "Registration failed")
+    }
+  }
+
   return (
     <div className={cn("flex flex-col gap-4", className)} {...props}>
       <Card className="bg-white/10 backdrop-blur-md border border-white/20 shadow-xl">
@@ -84,6 +127,7 @@ export function LoginForm({
                 {mode === "login" ? (
                   <motion.form
                     key="login"
+                    onSubmit={handleLogin}
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
@@ -97,6 +141,8 @@ export function LoginForm({
                           type="email"
                           placeholder="m@example.com"
                           required
+                          value={loginEmail}
+                          onChange={e => setLoginEmail(e.target.value)}
                           className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30"
                         />
                       </Field>
@@ -107,8 +153,16 @@ export function LoginForm({
                             Forgot?
                           </a>
                         </div>
-                        <Input id="password" type="password" required className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30" />
+                        <Input
+                          id="password"
+                          type="password"
+                          required
+                          value={loginPassword}
+                          onChange={e => setLoginPassword(e.target.value)}
+                          className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30"
+                        />
                       </Field>
+                      {loginError && <p className="text-xs text-red-400">{loginError}</p>}
                       <Field>
                         <Button type="submit" className="w-full bg-amber-50 text-black hover:bg-amber-100">Login</Button>
                       </Field>
@@ -117,6 +171,7 @@ export function LoginForm({
                 ) : (
                   <motion.form
                     key="register"
+                    onSubmit={handleRegister}
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
@@ -130,6 +185,8 @@ export function LoginForm({
                           type="text"
                           placeholder="Your name"
                           required
+                          value={regName}
+                          onChange={e => setRegName(e.target.value)}
                           className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30"
                         />
                       </Field>
@@ -140,13 +197,23 @@ export function LoginForm({
                           type="email"
                           placeholder="m@example.com"
                           required
+                          value={regEmail}
+                          onChange={e => setRegEmail(e.target.value)}
                           className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30"
                         />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="reg-password" className="text-amber-50/80">Password</FieldLabel>
-                        <Input id="reg-password" type="password" required className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30" />
+                        <Input
+                          id="reg-password"
+                          type="password"
+                          required
+                          value={regPassword}
+                          onChange={e => setRegPassword(e.target.value)}
+                          className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30"
+                        />
                       </Field>
+                      {regError && <p className="text-xs text-red-400">{regError}</p>}
                       <Field>
                         <Button type="submit" className="w-full bg-amber-50 text-black hover:bg-amber-100">Create account</Button>
                       </Field>

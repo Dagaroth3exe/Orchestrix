@@ -7,10 +7,12 @@ import { LoginForm } from "@/components/login-form";
 
 const IntroPage = () => {
 
+    const [showTagline, setShowTagline] = useState(false);
     const [showLogin, setShowLogin] = useState(false);
     useEffect(()=>{
-        const timer = setTimeout(()=>setShowLogin(true),3500);
-        return()=>clearTimeout(timer);
+        const t1 = setTimeout(()=>setShowTagline(true), 2800);  // logo settles → tagline fades in
+        const t2 = setTimeout(()=>setShowLogin(true), 4600);    // tagline visible 1.2s → login
+        return()=>{ clearTimeout(t1); clearTimeout(t2); };
     },[]);
 
 
@@ -34,9 +36,9 @@ const IntroPage = () => {
                             className="text-2xl text-center text-amber-50 max-w-xl whitespace-pre-line"
                             style={{ fontFamily: "var(--font-lora)" }}
                             initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            animate={{ opacity: showTagline ? 1 : 0, y: showTagline ? 0 : 10 }}
                             exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.6, ease: "easeOut", delay: 2.8 }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
                         >
                             Orchestrate everything like <br /> magic.
                         </motion.h1>
