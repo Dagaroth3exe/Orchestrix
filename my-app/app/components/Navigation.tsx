@@ -10,7 +10,7 @@ const navItems = [
   { label: "Notes",     href: "/Notes"     },
 ];
 
-export default function Sidebar() {
+export default function Navigation() {
   const pathname = usePathname();
 
   return (

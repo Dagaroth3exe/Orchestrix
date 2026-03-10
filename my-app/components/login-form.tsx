@@ -35,33 +35,13 @@ export function LoginForm({
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoginError("")
-    const res = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: loginEmail, password: loginPassword }),
-    })
-    if (res.ok) {
-      window.location.href = "/dashboard"
-    } else {
-      const data = await res.json()
-      setLoginError(data.error || "Login failed")
-    }
+    // TODO: implement login logic
   }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     setRegError("")
-    const res = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: regName, email: regEmail, password: regPassword }),
-    })
-    if (res.ok) {
-      setMode("login")
-    } else {
-      const data = await res.json()
-      setRegError(data.error || "Registration failed")
-    }
+    // TODO: implement register logic
   }
 
   return (
