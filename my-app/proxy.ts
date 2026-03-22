@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
-
-const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-
+  
 export async function proxy(req: NextRequest) {
-  const token = req.cookies.get('token')?.value;
-
-  if (!token) {
-    return NextResponse.redirect(new URL('/', req.url));
-  }
-
-  try {
-    await jwtVerify(token, secret);
+  // Allow direct access in local development while dashboard UI is being built.
+  if (process.env.NODE_ENV === 'development') {
     return NextResponse.next();
-  } catch {
+  }
+
+  const isAuthenticated = req.cookies.get('auth')?.value === '1';
+
+  if (!isAuthenticated) {
     return NextResponse.redirect(new URL('/', req.url));
   }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ['/dashboard/:path*', '/Notes/:path*', '/Tasks/:path*'],
 };

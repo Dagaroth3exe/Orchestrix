@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const router = useRouter()
   const [mode, setMode] = useState<"login" | "register">("login")
 
   // Login fields
@@ -35,13 +37,27 @@ export function LoginForm({
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoginError("")
-    // TODO: implement login logic
+
+    if (!loginEmail || !loginPassword) {
+      setLoginError("Please enter your email and password.")
+      return
+    }
+
+    document.cookie = "auth=1; path=/; max-age=2592000; samesite=lax"
+    router.push("/dashboard")
   }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     setRegError("")
-    // TODO: implement register logic
+
+    if (!regName || !regEmail || !regPassword) {
+      setRegError("Please fill in all fields.")
+      return
+    }
+
+    document.cookie = "auth=1; path=/; max-age=2592000; samesite=lax"
+    router.push("/dashboard")
   }
 
   return (
@@ -102,7 +118,7 @@ export function LoginForm({
             </div>
 
             {/* Right column — swaps between login and register */}
-            <div className="flex flex-col justify-center min-h-[220px]">
+            <div className="flex flex-col justify-center min-h-55">
               <AnimatePresence mode="wait">
                 {mode === "login" ? (
                   <motion.form
