@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowRight, BookOpen, CheckSquare, Bell, Clock, User } from "lucide-react";
+import { BookOpen, CheckSquare, Bell, Clock, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ShortBlackLogo from "@/app/Assets/Short black logo.png";
 
@@ -13,12 +13,6 @@ export default function DashboardPage() {
     { icon: CheckSquare, label: "Tasks" },
     { icon: Bell, label: "Alerts" },
     { icon: Clock, label: "Focus" },
-  ];
-
-  const recentNotes = [
-    { title: "Sprint Planning Ideas", updatedAt: "2h ago", preview: "Draft priorities for next sprint and ownership." },
-    { title: "Client Call Summary", updatedAt: "Yesterday", preview: "Budget constraints, timeline updates, and next steps." },
-    { title: "UI Polish Checklist", updatedAt: "3 days ago", preview: "Spacing, typography balance, and hover consistency." },
   ];
 
   return (
@@ -63,39 +57,6 @@ export default function DashboardPage() {
         </div>
         <div className="h-full w-full">
           <div className="InfoBox bg-amber-50 h-full w-full rounded-2xl p-6">
-            <div className="h-full w-full rounded-2xl border border-zinc-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm">
-              <div className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-zinc-900 [font-family:var(--font-outfit)]">Recent Notes</h2>
-                  <p className="mt-1 text-sm text-zinc-600">Quick access to your latest updates.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => router.push("/Notes")}
-                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-200"
-                >
-                  View All
-                  <ArrowRight className="size-4" />
-                </button>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {recentNotes.map((note) => (
-                  <button
-                    key={note.title}
-                    type="button"
-                    onClick={() => router.push("/Notes")}
-                    className="w-full rounded-xl border border-zinc-200 bg-white/90 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-sm font-semibold text-zinc-900">{note.title}</h3>
-                      <span className="text-xs font-medium text-zinc-500">{note.updatedAt}</span>
-                    </div>
-                    <p className="mt-2 text-sm text-zinc-600">{note.preview}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>
