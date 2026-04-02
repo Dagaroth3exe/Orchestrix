@@ -68,19 +68,21 @@ export default function DashboardPage() {
           <div className="InfoBox flex flex-col gap-2 bg-amber-50 h-full w-full rounded-2xl p-6 pl-8"> 
 
             {/* Recent Notes */}
-            <div className="RecentNote text-4xl text-[#231E1F] [font-family:var(--font-outfit)] p-2 font-semibold">
-              Recent Notes
-            </div>
-            <div className="flex gap-4 mb-6">
-              <div className="bg-[#231E1F] h-40 w-58.5 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]">
-                <div className="bg-white w-[100%] h-[80%] rounded-md"></div> 
-            </div>
-            <div className="bg-[#231E1F] h-40 w-58.5 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]">
-              <div className="bg-white w-[100%] h-[80%] rounded-md"></div> 
-            </div>
-            <div className="bg-[#231E1F] h-40 w-58.5 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]">
-              <div className="bg-white w-[100%] h-[80%] rounded-md"></div> 
-            </div>
+            <div className="">
+              <div className="RecentNote text-4xl text-[#231E1F] [font-family:var(--font-outfit)] p-2 font-semibold">
+                Recent Notes
+              </div>
+              <div className="flex gap-4 mb-6">
+                <div className="bg-[#231E1F] h-40 w-58.5 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]">
+                  <div className="prevContainer bg-white h-[80%] rounded-md"></div> 
+              </div>
+              <div className="prevContainer bg-[#231E1F] h-40 w-58.5 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]">
+                <div className="bg-white h-[80%] rounded-md"></div> 
+              </div>
+              <div className="prevContainer bg-[#231E1F] h-40 w-58.5 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]">
+                <div className="bg-white h-[80%] rounded-md"></div> 
+              </div>
+              </div>
             </div>
              
              {/* Recent Tasks */}
