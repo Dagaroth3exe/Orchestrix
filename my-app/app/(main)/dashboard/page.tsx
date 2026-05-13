@@ -126,7 +126,7 @@ export default function DashboardPage() {
             {/* Recent Notes */}
             <div className="">
               <div className="flex items-center justify-between mb-4">
-                <div className="RecentNote text-4xl text-[#231E1F] [font-family:var(--font-outfit)] p-2 font-semibold">
+                <div className="RecentNote text-4xl text-[#231E1F] [font-family:var(--font-outfit)] font-semibold">
                   Recent Notes
                 </div>
                 <button
@@ -155,35 +155,37 @@ export default function DashboardPage() {
               </div>
             </div>
              
-             {/* Recent Tasks */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="RecentTask text-4xl text-[#231E1F] [font-family:var(--font-outfit)] font-semibold">
-                Recent Tasks
+            {/* Recent Tasks */}
+            <div className="">
+              <div className="flex items-center justify-between mb-4">
+                <div className="RecentTask text-4xl text-[#231E1F] [font-family:var(--font-outfit)] font-semibold">
+                  Recent Tasks
+                </div>
+                <button
+                  onClick={() => router.push("/Tasks")}
+                  className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold text-sm"
+                >
+                  View All <ArrowRight className="size-4" />
+                </button>
               </div>
-              <button
-                onClick={() => router.push("/Tasks")}
-                className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold text-sm"
-              >
-                View All <ArrowRight className="size-4" />
-              </button>
-            </div>
-            <div className="flex gap-4">
-              {recentTasks.length === 0 ? (
-                <p className="text-[#231E1F]/40 text-sm [font-family:var(--font-outfit)] py-2">
-                  No tasks yet — create one in Tasks.
-                </p>
-              ) : (
-                recentTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    title={task.title}
-                    description={task.description}
-                    priority={task.priority}
-                    dueDate={task.dueDate}
-                    onClick={() => router.push("/Tasks")}
-                  />
-                ))
-              )}
+              <div className="flex gap-4">
+                {recentTasks.length === 0 ? (
+                  <p className="text-[#231E1F]/40 text-sm [font-family:var(--font-outfit)] py-2">
+                    No tasks yet — create one in Tasks.
+                  </p>
+                ) : (
+                  recentTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      title={task.title}
+                      description={task.description}
+                      priority={task.priority}
+                      dueDate={task.dueDate}
+                      onClick={() => router.push("/Tasks")}
+                    />
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>

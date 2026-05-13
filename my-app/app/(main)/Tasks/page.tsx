@@ -97,6 +97,24 @@ export default function TasksPage() {
     });
   };
 
+  const handleSaveTask = async (updated: Task) => {
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        title: updated.title,
+        description: updated.description,
+        priority: updated.priority,
+        due_date: updated.dueDate,
+      })
+      .eq("id", updated.id);
+
+    if (error) {
+      setDbError(`Save failed: ${error.message}`);
+    } else {
+      setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    }
+  };
+
   const handleToggleComplete = async (id: string) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
@@ -156,6 +174,7 @@ export default function TasksPage() {
           isEditing={isEditing}
           onEditToggle={() => setIsEditing(!isEditing)}
           onToggleComplete={handleToggleComplete}
+          onSave={handleSaveTask}
         />
       </div>
     </div>
