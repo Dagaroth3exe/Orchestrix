@@ -3,14 +3,73 @@
 import Image from "next/image";
 import { BookOpen, CheckSquare, Bell, Clock, User, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import ShortBlackLogo from "@/app/Assets/Short black logo.png";
 import NoteCard from "@/app/components/NoteCard";
 import TaskCard from "@/app/components/TaskCard";
+import { supabase } from "@/lib/supabase";
+
+interface RecentNote {
+  id: string;
+  title: string;
+  preview: string;
+  updatedAt: string;
+}
+
+interface RecentTask {
+  id: string;
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+  dueDate: string;
+}
+
+function formatRelative(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}hr ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
 export default function DashboardPage() {
-
-
   const router = useRouter();
+  const [recentNotes, setRecentNotes] = useState<RecentNote[]>([]);
+  const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
+
+  useEffect(() => {
+    async function fetchRecent() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const [notesRes, tasksRes] = await Promise.all([
+        supabase.from("notes").select("id, title, preview, updated_at").order("updated_at", { ascending: false }).limit(3),
+        supabase.from("tasks").select("id, title, description, priority, due_date").order("created_at", { ascending: false }).limit(3),
+      ]);
+
+      if (notesRes.data) {
+        setRecentNotes(notesRes.data.map((r) => ({
+          id: r.id,
+          title: r.title,
+          preview: r.preview,
+          updatedAt: formatRelative(r.updated_at),
+        })));
+      }
+
+      if (tasksRes.data) {
+        setRecentTasks(tasksRes.data.map((r) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description,
+          priority: r.priority,
+          dueDate: r.due_date,
+        })));
+      }
+    }
+    fetchRecent();
+  }, []);
 
   const navButtons = [
     { icon: BookOpen, label: "Notes" },
@@ -18,17 +77,6 @@ export default function DashboardPage() {
     { icon: Bell, label: "Alerts" },
     { icon: Clock, label: "Focus" },
   ];
-  
-  const recentNotes = [
-    {title : "Potential topics for automotive videos", updatesAt : "2hr ago", Preview :"make notes on the videos you wanna make"},
-    {title : "NIMCET Prep", updatesAt : "4hr ago", Preview :"clear fundamentals on quant"},
-    {title : "GtM explore", updatesAt : "1hr ago", Preview :"explore what GTM does"}
-  ]
-
-  const recentTasks = [
-    {title: "Finish Q1 report", description: "Complete the quarterly business report and send to management", priority: "high" as const, dueDate: "2026-05-15"},
-    {title: "Review team feedback", description: "Go through all team feedback from the last sprint", priority: "medium" as const, dueDate: "2026-05-20"},
-  ]
 
   return (
     <div className="w-full max-w-none mx-auto h-[calc(100vh-2rem)] overflow-hidden">
@@ -89,15 +137,21 @@ export default function DashboardPage() {
                 </button>
               </div>
               <div className="flex gap-4 mb-6">
-                {recentNotes.map((note, index) => (
-                  <NoteCard
-                    key={index}
-                    title={note.title}
-                    preview={note.Preview}
-                    updatedAt={note.updatesAt}
-                    onClick={() => router.push("/Notes")}
-                  />
-                ))}
+                {recentNotes.length === 0 ? (
+                  <p className="text-[#231E1F]/40 text-sm [font-family:var(--font-outfit)] py-2">
+                    No notes yet — create one in Notes.
+                  </p>
+                ) : (
+                  recentNotes.map((note) => (
+                    <NoteCard
+                      key={note.id}
+                      title={note.title}
+                      preview={note.preview}
+                      updatedAt={note.updatedAt}
+                      onClick={() => router.push("/Notes")}
+                    />
+                  ))
+                )}
               </div>
             </div>
              
@@ -114,16 +168,22 @@ export default function DashboardPage() {
               </button>
             </div>
             <div className="flex gap-4">
-              {recentTasks.map((task, index) => (
-                <TaskCard
-                  key={index}
-                  title={task.title}
-                  description={task.description}
-                  priority={task.priority}
-                  dueDate={task.dueDate}
-                  onClick={() => router.push("/Tasks")}
-                />
-              ))}
+              {recentTasks.length === 0 ? (
+                <p className="text-[#231E1F]/40 text-sm [font-family:var(--font-outfit)] py-2">
+                  No tasks yet — create one in Tasks.
+                </p>
+              ) : (
+                recentTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    title={task.title}
+                    description={task.description}
+                    priority={task.priority}
+                    dueDate={task.dueDate}
+                    onClick={() => router.push("/Tasks")}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>

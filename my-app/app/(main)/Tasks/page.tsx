@@ -35,6 +35,7 @@ export default function TasksPage() {
   const [filterPriority, setFilterPriority] = useState<"all" | "high" | "medium" | "low">("all");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState<string | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -77,7 +78,9 @@ export default function TasksPage() {
       .select()
       .single();
 
-    if (!error && data) {
+    if (error) {
+      setDbError(`Insert failed: ${error.message} (code: ${error.code})`);
+    } else if (data) {
       const newTask = dbRowToTask(data);
       setTasks((prev) => [newTask, ...prev]);
       setSelectedTaskId(newTask.id);
@@ -120,6 +123,11 @@ export default function TasksPage() {
 
   return (
     <div className="w-full h-full flex flex-col bg-amber-50 rounded-2xl overflow-hidden">
+      {dbError && (
+        <div className="bg-red-500 text-white text-sm px-6 py-2 [font-family:var(--font-outfit)]">
+          Supabase error: {dbError}
+        </div>
+      )}
       <div className="px-6 py-4 border-b border-[#231E1F]/10">
         <button
           onClick={() => router.push("/dashboard")}
