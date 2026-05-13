@@ -161,6 +161,7 @@ export default function TasksPage() {
           selectedTaskId={selectedTaskId}
           onSelectTask={setSelectedTaskId}
           onAddTask={handleAddTask}
+          onDeleteTask={handleDeleteTask}
           onToggleComplete={handleToggleComplete}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
