@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Trash2, ArrowLeft } from "lucide-react";
 
 interface Note {
@@ -14,7 +15,7 @@ interface NotesDetailProps {
   onBack: () => void;
   isEditing: boolean;
   onEditToggle: () => void;
-  onSave?: (updatedNote: Note) => void;
+  onSave: (updatedNote: Note) => void;
 }
 
 export default function NotesDetail({
@@ -25,6 +26,16 @@ export default function NotesDetail({
   onEditToggle,
   onSave,
 }: NotesDetailProps) {
+  const [localTitle, setLocalTitle] = useState("");
+  const [localContent, setLocalContent] = useState("");
+
+  useEffect(() => {
+    if (note) {
+      setLocalTitle(note.title);
+      setLocalContent(note.content || note.preview || "");
+    }
+  }, [note?.id]);
+
   if (!note) {
     return (
       <div className="w-[70%] bg-amber-50 rounded-2xl p-8 flex flex-col items-center justify-center h-full">
@@ -35,14 +46,13 @@ export default function NotesDetail({
     );
   }
 
-  const handleSave = (updatedTitle: string, updatedContent: string) => {
-    if (onSave) {
-      onSave({
-        ...note,
-        title: updatedTitle || "Untitled",
-        content: updatedContent,
-      });
-    }
+  const handleSave = () => {
+    onSave({
+      ...note,
+      title: localTitle || "Untitled",
+      content: localContent,
+    });
+    onEditToggle();
   };
 
   return (
@@ -59,8 +69,8 @@ export default function NotesDetail({
           {isEditing ? (
             <input
               type="text"
-              defaultValue={note.title}
-              id="noteTitle"
+              value={localTitle}
+              onChange={(e) => setLocalTitle(e.target.value)}
               className="text-4xl text-[#231E1F] font-semibold [font-family:var(--font-outfit)] bg-transparent border-b-2 border-[#231E1F] w-full focus:outline-none focus:border-[#231E1F]/60"
               placeholder="Note title..."
             />
@@ -75,21 +85,7 @@ export default function NotesDetail({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              if (isEditing) {
-                const titleInput = document.getElementById(
-                  "noteTitle"
-                ) as HTMLInputElement;
-                const contentTextarea = document.getElementById(
-                  "noteContent"
-                ) as HTMLTextAreaElement;
-                handleSave(
-                  titleInput?.value || note.title,
-                  contentTextarea?.value || note.content || ""
-                );
-              }
-              onEditToggle();
-            }}
+            onClick={isEditing ? handleSave : onEditToggle}
             className="px-4 py-2 bg-[#231E1F] text-amber-50 rounded-lg hover:bg-[#231E1F]/90 transition-colors font-semibold text-sm [font-family:var(--font-outfit)]"
           >
             {isEditing ? "Save" : "Edit"}
@@ -107,8 +103,8 @@ export default function NotesDetail({
       <div className="flex-1">
         {isEditing ? (
           <textarea
-            id="noteContent"
-            defaultValue={note.content || note.preview}
+            value={localContent}
+            onChange={(e) => setLocalContent(e.target.value)}
             className="w-full h-full p-4 bg-white border border-[#231E1F]/20 rounded-lg text-[#231E1F] focus:outline-none focus:ring-2 focus:ring-[#231E1F] [font-family:var(--font-outfit)] resize-none"
             placeholder="Start typing..."
           />
