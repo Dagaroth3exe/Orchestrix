@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { BookOpen, CheckSquare, Bell, Clock, User } from "lucide-react";
+import { BookOpen, CheckSquare, Bell, Clock, User, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ShortBlackLogo from "@/app/Assets/Short black logo.png";
+import NoteCard from "@/app/components/NoteCard";
+import TaskCard from "@/app/components/TaskCard";
 
 export default function DashboardPage() {
 
@@ -23,6 +25,11 @@ export default function DashboardPage() {
     {title : "GtM explore", updatesAt : "1hr ago", Preview :"explore what GTM does"}
   ]
 
+  const recentTasks = [
+    {title: "Finish Q1 report", description: "Complete the quarterly business report and send to management", priority: "high" as const, dueDate: "2026-05-15"},
+    {title: "Review team feedback", description: "Go through all team feedback from the last sprint", priority: "medium" as const, dueDate: "2026-05-20"},
+  ]
+
   return (
     <div className="w-full max-w-none mx-auto h-[calc(100vh-2rem)] overflow-hidden">
       <div className="Main bg-amber-50/80 h-full w-full rounded-2xl p-3 flex gap-3">
@@ -39,6 +46,7 @@ export default function DashboardPage() {
             {navButtons.map(({ icon: Icon, label }) => (
               <button
                 key={label}
+                onClick={() => router.push(`/${label}`)}
                 aria-label={label}
                 className="group relative h-9 w-9 overflow-hidden rounded-xl border-[5px] border-zinc-200 bg-zinc-300 text-zinc-950 shadow-[0_8px_18px_rgba(0,0,0,0.18)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:w-20 hover:border-zinc-300 hover:bg-zinc-200 hover:shadow-[0_12px_24px_rgba(0,0,0,0.22)] hover:-translate-y-0.5"
               >
@@ -69,31 +77,53 @@ export default function DashboardPage() {
 
             {/* Recent Notes */}
             <div className="">
-              <div className="RecentNote text-4xl text-[#231E1F] [font-family:var(--font-outfit)] p-2 font-semibold">
-                Recent Notes
+              <div className="flex items-center justify-between mb-4">
+                <div className="RecentNote text-4xl text-[#231E1F] [font-family:var(--font-outfit)] p-2 font-semibold">
+                  Recent Notes
+                </div>
+                <button
+                  onClick={() => router.push("/Notes")}
+                  className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold text-sm"
+                >
+                  View All <ArrowRight className="size-4" />
+                </button>
               </div>
               <div className="flex gap-4 mb-6">
-                <div className="bg-[#231E1F] h-40 w-58.5 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]">
-                  <div className="prevContainer bg-white h-[80%] rounded-md"></div> 
-              </div>
-              <div className="prevContainer bg-[#231E1F] h-40 w-58.5 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]">
-                <div className="bg-white h-[80%] rounded-md"></div> 
-              </div>
-              <div className="prevContainer bg-[#231E1F] h-40 w-58.5 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]">
-                <div className="bg-white h-[80%] rounded-md"></div> 
-              </div>
+                {recentNotes.map((note, index) => (
+                  <NoteCard
+                    key={index}
+                    title={note.title}
+                    preview={note.Preview}
+                    updatedAt={note.updatesAt}
+                    onClick={() => router.push("/Notes")}
+                  />
+                ))}
               </div>
             </div>
              
              {/* Recent Tasks */}
-            <div className="RecentTask text-4xl text-[#231E1F] [font-family:var(--font-outfit)] p-2 font-semibold">
-              Recent Tasks
+            <div className="flex items-center justify-between mb-4">
+              <div className="RecentTask text-4xl text-[#231E1F] [font-family:var(--font-outfit)] font-semibold">
+                Recent Tasks
+              </div>
+              <button
+                onClick={() => router.push("/Tasks")}
+                className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold text-sm"
+              >
+                View All <ArrowRight className="size-4" />
+              </button>
             </div>
             <div className="flex gap-4">
-              <div className="bg-[#231E1F] h-60 w-90 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]"> 
-            </div>
-            <div className="bg-[#231E1F] h-60 w-90 rounded-xl p-4 transition-all duration-300 hover:col-span-2 [font-family:var(--font-outfit)]"> 
-            </div>
+              {recentTasks.map((task, index) => (
+                <TaskCard
+                  key={index}
+                  title={task.title}
+                  description={task.description}
+                  priority={task.priority}
+                  dueDate={task.dueDate}
+                  onClick={() => router.push("/Tasks")}
+                />
+              ))}
             </div>
           </div>
         </div>

@@ -28,7 +28,7 @@ export default function Navigation() {
           )}
         >
           {label}
-        </Link>
+        </Link> 
       ))}
     </aside>
   );

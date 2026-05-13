@@ -15,6 +15,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { supabase } from "@/lib/supabase"
 
 export function LoginForm({
   className,
@@ -38,12 +39,20 @@ export function LoginForm({
     e.preventDefault()
     setLoginError("")
 
-    if (!loginEmail || !loginPassword) {
-      setLoginError("Please enter your email and password.")
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPassword,
+    })
+
+    if (error) {
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        setLoginError("Please confirm your email — check your inbox for a verification link.")
+      } else {
+        setLoginError(error.message)
+      }
       return
     }
 
-    document.cookie = "auth=1; path=/; max-age=2592000; samesite=lax"
     router.push("/dashboard")
   }
 
@@ -51,12 +60,17 @@ export function LoginForm({
     e.preventDefault()
     setRegError("")
 
-    if (!regName || !regEmail || !regPassword) {
-      setRegError("Please fill in all fields.")
+    const { error } = await supabase.auth.signUp({
+      email: regEmail,
+      password: regPassword,
+      options: { data: { full_name: regName } },
+    })
+
+    if (error) {
+      setRegError(error.message)
       return
     }
 
-    document.cookie = "auth=1; path=/; max-age=2592000; samesite=lax"
     router.push("/dashboard")
   }
 
