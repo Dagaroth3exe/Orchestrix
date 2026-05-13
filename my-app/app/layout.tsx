@@ -27,9 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} ${lora.variable} antialiased`}>
-        <div className="relative min-h-screen w-full overflow-hidden">
+        <div className="relative h-screen w-full overflow-hidden">
           <PixelBackground />
-          <div className="relative z-20 min-h-screen">{children}</div>
+          <div className="relative z-20 h-full">{children}</div>
         </div>
       </body>
     </html>
