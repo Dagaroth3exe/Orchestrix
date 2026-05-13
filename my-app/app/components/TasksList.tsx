@@ -1,6 +1,3 @@
-"use client";
-
-import { useState, useEffect, useRef } from "react";
 import { Search, Plus, CheckCircle2, Circle } from "lucide-react";
 
 interface Task {
@@ -17,7 +14,6 @@ interface TasksListProps {
   selectedTaskId: string | null;
   onSelectTask: (id: string) => void;
   onAddTask: () => void;
-  onDeleteTask: (id: string) => void;
   onToggleComplete: (id: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -25,27 +21,17 @@ interface TasksListProps {
   onFilterChange: (priority: "all" | "high" | "medium" | "low") => void;
 }
 
-interface ContextMenu {
-  taskId: string;
-  x: number;
-  y: number;
-}
-
 export default function TasksList({
   tasks,
   selectedTaskId,
   onSelectTask,
   onAddTask,
-  onDeleteTask,
   onToggleComplete,
   searchQuery,
   onSearchChange,
   filterPriority,
   onFilterChange,
 }: TasksListProps) {
-  const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
   const priorityColors = {
     high: "bg-red-500",
     medium: "bg-yellow-500",
@@ -60,158 +46,109 @@ export default function TasksList({
     return matchesSearch && matchesPriority;
   });
 
-  const handleContextMenu = (e: React.MouseEvent, taskId: string) => {
-    e.preventDefault();
-    setContextMenu({ taskId, x: e.clientX, y: e.clientY });
-  };
-
-  const closeMenu = () => setContextMenu(null);
-
-  useEffect(() => {
-    if (!contextMenu) return;
-    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeMenu(); };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [contextMenu]);
-
-  const contextTask = contextMenu ? tasks.find((t) => t.id === contextMenu.taskId) : null;
-
   return (
-    <>
-      {/* Full-page backdrop + context menu */}
-      {contextMenu && (
-        <div
-          className="fixed inset-0 z-50"
-          onClick={closeMenu}
-          onContextMenu={(e) => { e.preventDefault(); closeMenu(); }}
+    <div className="w-[30%] bg-[#231E1F] rounded-2xl p-4 flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-white text-2xl font-semibold [font-family:var(--font-outfit)]">
+          Tasks
+        </h2>
+        <button
+          onClick={onAddTask}
+          className="bg-amber-50/80 hover:bg-amber-50 text-[#231E1F] p-2 rounded-lg transition-colors"
+          aria-label="Add new task"
         >
-          <div
-            ref={menuRef}
-            className="absolute bg-[#231E1F] rounded-2xl shadow-2xl overflow-hidden w-44 py-1"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="w-full text-left px-4 py-3 text-sm text-white [font-family:var(--font-outfit)] font-semibold hover:bg-white/10 transition-colors"
-              onClick={() => { onSelectTask(contextMenu.taskId); closeMenu(); }}
-            >
-              Open
-            </button>
-            <button
-              className="w-full text-left px-4 py-3 text-sm text-white [font-family:var(--font-outfit)] font-semibold hover:bg-white/10 transition-colors"
-              onClick={() => { onToggleComplete(contextMenu.taskId); closeMenu(); }}
-            >
-              {contextTask?.completed ? "Mark Incomplete" : "Mark Complete"}
-            </button>
-            <div className="h-px bg-white/10 mx-3" />
-            <button
-              className="w-full text-left px-4 py-3 text-sm text-red-400 [font-family:var(--font-outfit)] font-semibold hover:bg-white/10 transition-colors"
-              onClick={() => { onDeleteTask(contextMenu.taskId); closeMenu(); }}
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      )}
+          <Plus className="size-5" />
+        </button>
+      </div>
 
-      <div className="w-[30%] bg-[#231E1F] rounded-2xl p-4 flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white text-2xl font-semibold [font-family:var(--font-outfit)]">
-            Tasks
-          </h2>
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4" />
+        <input
+          type="text"
+          placeholder="Search tasks..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 bg-[#2a2522] text-white placeholder-gray-500 rounded-lg border border-gray-700 focus:border-amber-50/30 focus:outline-none [font-family:var(--font-outfit)]"
+        />
+      </div>
+
+      {/* Filter Buttons */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+        {["all", "high", "medium", "low"].map((priority) => (
           <button
-            onClick={onAddTask}
-            className="bg-amber-50/80 hover:bg-amber-50 text-[#231E1F] p-2 rounded-lg transition-colors"
-            aria-label="Add new task"
+            key={priority}
+            onClick={() =>
+              onFilterChange(priority as "all" | "high" | "medium" | "low")
+            }
+            className={`px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap transition-all [font-family:var(--font-outfit)] ${
+              filterPriority === priority
+                ? "bg-amber-50 text-[#231E1F]"
+                : "bg-[#2a2522] text-gray-400 hover:bg-[#332f2a]"
+            }`}
           >
-            <Plus className="size-5" />
+            {priority.charAt(0).toUpperCase() + priority.slice(1)}
           </button>
-        </div>
+        ))}
+      </div>
 
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4" />
-          <input
-            type="text"
-            placeholder="Search tasks..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[#2a2522] text-white placeholder-gray-500 rounded-lg border border-gray-700 focus:border-amber-50/30 focus:outline-none [font-family:var(--font-outfit)]"
-          />
-        </div>
-
-        {/* Filter Buttons */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-          {["all", "high", "medium", "low"].map((priority) => (
+      {/* Tasks List */}
+      <div className="flex-1 overflow-y-auto space-y-2">
+        {filteredTasks.length === 0 ? (
+          <div className="text-gray-400 text-center py-8 text-sm">
+            No tasks found
+          </div>
+        ) : (
+          filteredTasks.map((task) => (
             <button
-              key={priority}
-              onClick={() => onFilterChange(priority as "all" | "high" | "medium" | "low")}
-              className={`px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap transition-all [font-family:var(--font-outfit)] ${
-                filterPriority === priority
-                  ? "bg-amber-50 text-[#231E1F]"
-                  : "bg-[#2a2522] text-gray-400 hover:bg-[#332f2a]"
+              key={task.id}
+              onClick={() => onSelectTask(task.id)}
+              className={`w-full text-left p-3 rounded-lg transition-all [font-family:var(--font-outfit)] group ${
+                selectedTaskId === task.id
+                  ? "bg-amber-50/20 border-l-4 border-amber-50"
+                  : "hover:bg-[#2a2522]"
               }`}
             >
-              {priority.charAt(0).toUpperCase() + priority.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Tasks List */}
-        <div className="flex-1 overflow-y-auto space-y-2">
-          {filteredTasks.length === 0 ? (
-            <div className="text-gray-400 text-center py-8 text-sm">
-              No tasks found
-            </div>
-          ) : (
-            filteredTasks.map((task) => (
-              <button
-                key={task.id}
-                onClick={() => onSelectTask(task.id)}
-                onContextMenu={(e) => handleContextMenu(e, task.id)}
-                className={`w-full text-left p-3 rounded-lg transition-all [font-family:var(--font-outfit)] group ${
-                  selectedTaskId === task.id
-                    ? "bg-amber-50/20 border-l-4 border-amber-50"
-                    : "hover:bg-[#2a2522]"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleComplete(task.id);
-                    }}
-                    className="mt-1 text-gray-400 hover:text-amber-50 transition-colors"
-                  >
-                    {task.completed ? (
-                      <CheckCircle2 className="size-5 text-green-400" />
-                    ) : (
-                      <Circle className="size-5" />
-                    )}
-                  </button>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3
-                        className={`font-semibold text-sm line-clamp-1 ${
-                          task.completed ? "text-gray-500 line-through" : "text-white"
-                        }`}
-                      >
-                        {task.title}
-                      </h3>
-                      <span className={`w-2 h-2 rounded-full ${priorityColors[task.priority]}`} />
-                    </div>
-                    <p className="text-gray-400 text-xs line-clamp-1 mt-1">
-                      {task.description}
-                    </p>
-                    <p className="text-gray-500 text-xs mt-1">{task.dueDate}</p>
+              <div className="flex items-start gap-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleComplete(task.id);
+                  }}
+                  className="mt-1 text-gray-400 hover:text-amber-50 transition-colors"
+                >
+                  {task.completed ? (
+                    <CheckCircle2 className="size-5 text-green-400" />
+                  ) : (
+                    <Circle className="size-5" />
+                  )}
+                </button>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3
+                      className={`font-semibold text-sm line-clamp-1 ${
+                        task.completed
+                          ? "text-gray-500 line-through"
+                          : "text-white"
+                      }`}
+                    >
+                      {task.title}
+                    </h3>
+                    <span
+                      className={`w-2 h-2 rounded-full ${priorityColors[task.priority]}`}
+                    ></span>
                   </div>
+                  <p className="text-gray-400 text-xs line-clamp-1 mt-1">
+                    {task.description}
+                  </p>
+                  <p className="text-gray-500 text-xs mt-1">{task.dueDate}</p>
                 </div>
-              </button>
-            ))
-          )}
-        </div>
+              </div>
+            </button>
+          ))
+        )}
       </div>
-    </>
+    </div>
   );
 }

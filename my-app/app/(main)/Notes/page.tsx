@@ -151,7 +151,6 @@ export default function NotesPage() {
           selectedNoteId={selectedNoteId}
           onSelectNote={setSelectedNoteId}
           onAddNote={handleAddNote}
-          onDeleteNote={handleDeleteNote}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
