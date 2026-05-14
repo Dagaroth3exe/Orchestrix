@@ -51,7 +51,7 @@ export default function TasksDetail({
 
   if (!task) {
     return (
-      <div className="w-[70%] bg-amber-50 rounded-2xl p-8 flex flex-col items-center justify-center h-full">
+      <div className="w-full bg-amber-50 rounded-2xl p-8 flex flex-col items-center justify-center h-full">
         <p className="text-[#231E1F]/50 text-lg [font-family:var(--font-outfit)]">
           Select a task to view details
         </p>
@@ -71,7 +71,7 @@ export default function TasksDetail({
   };
 
   return (
-    <div className="w-full md:w-[70%] bg-amber-50 rounded-2xl p-4 md:p-8 flex flex-col h-full overflow-y-auto">
+    <div className="w-full md:w-full bg-amber-50 rounded-2xl p-4 md:p-8 flex flex-col h-full overflow-y-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-6 pb-4 border-b border-[#231E1F]/10">
         <button

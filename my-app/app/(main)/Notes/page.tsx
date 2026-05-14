@@ -146,8 +146,8 @@ export default function NotesPage() {
         </button>
       </div>
       <div className="flex-1 p-3 md:p-6 flex gap-4 overflow-hidden">
-        {/* On mobile: show list when nothing selected, detail when selected */}
-        <div className={`${selectedNoteId ? "hidden md:flex" : "flex"} w-full md:w-auto`}>
+        {/* List: full-width on mobile (hidden when note selected), 30% on desktop */}
+        <div className={`h-full w-full md:w-[30%] shrink-0 ${selectedNoteId ? "hidden md:block" : "block"}`}>
           <NotesList
             notes={notes}
             selectedNoteId={selectedNoteId}
@@ -157,7 +157,8 @@ export default function NotesPage() {
             onSearchChange={setSearchQuery}
           />
         </div>
-        <div className={`${selectedNoteId ? "flex" : "hidden md:flex"} w-full md:w-auto`}>
+        {/* Detail: full-width on mobile (hidden when no note), fills remaining space on desktop */}
+        <div className={`h-full flex-1 min-w-0 ${selectedNoteId ? "block" : "hidden md:block"}`}>
           <NotesDetail
             note={selectedNote}
             onDelete={handleDeleteNote}

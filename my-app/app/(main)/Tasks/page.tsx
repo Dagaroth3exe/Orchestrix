@@ -156,8 +156,8 @@ export default function TasksPage() {
         </button>
       </div>
       <div className="flex-1 p-3 md:p-6 flex gap-4 overflow-hidden">
-        {/* On mobile: show list when nothing selected, detail when selected */}
-        <div className={`${selectedTaskId ? "hidden md:flex" : "flex"} w-full md:w-auto`}>
+        {/* List: full-width on mobile (hidden when task selected), 30% on desktop */}
+        <div className={`h-full w-full md:w-[30%] shrink-0 ${selectedTaskId ? "hidden md:block" : "block"}`}>
           <TasksList
             tasks={tasks}
             selectedTaskId={selectedTaskId}
@@ -170,7 +170,8 @@ export default function TasksPage() {
             onFilterChange={setFilterPriority}
           />
         </div>
-        <div className={`${selectedTaskId ? "flex" : "hidden md:flex"} w-full md:w-auto`}>
+        {/* Detail: full-width on mobile (hidden when no task), fills remaining space on desktop */}
+        <div className={`h-full flex-1 min-w-0 ${selectedTaskId ? "block" : "hidden md:block"}`}>
           <TasksDetail
             task={selectedTask}
             onDelete={handleDeleteTask}

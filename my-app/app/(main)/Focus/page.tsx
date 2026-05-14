@@ -108,8 +108,8 @@ export default function FocusPage() {
       </div>
 
       {/* Main Timer - two column layout */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8">
-        <div className="flex flex-col lg:flex-row gap-8 min-h-full max-w-4xl mx-auto">
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden p-4 md:p-8">
+        <div className="flex flex-col lg:flex-row gap-8 lg:h-full max-w-4xl mx-auto">
 
           {/* Left column: Timer + Controls — always fully visible */}
           <div className="flex flex-col items-center justify-center gap-6 flex-1">
