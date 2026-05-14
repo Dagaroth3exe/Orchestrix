@@ -12,6 +12,7 @@ interface NotesListProps {
   selectedNoteId: string | null;
   onSelectNote: (id: string) => void;
   onAddNote: () => void;
+  isAdding?: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
 }
@@ -21,6 +22,7 @@ export default function NotesList({
   selectedNoteId,
   onSelectNote,
   onAddNote,
+  isAdding = false,
   searchQuery,
   onSearchChange,
 }: NotesListProps) {
@@ -39,10 +41,11 @@ export default function NotesList({
         </h2>
         <button
           onClick={onAddNote}
-          className="bg-amber-50/80 hover:bg-amber-50 text-[#231E1F] p-2 rounded-lg transition-colors"
+          disabled={isAdding}
+          className="bg-amber-50/80 hover:bg-amber-50 text-[#231E1F] p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Add new note"
         >
-          <Plus className="size-5" />
+          {isAdding ? <span className="text-xs font-semibold px-1">...</span> : <Plus className="size-5" />}
         </button>
       </div>
 

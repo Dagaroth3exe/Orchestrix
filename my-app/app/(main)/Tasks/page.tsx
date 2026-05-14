@@ -35,6 +35,8 @@ export default function TasksPage() {
   const [filterPriority, setFilterPriority] = useState<"all" | "high" | "medium" | "low">("all");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,8 +63,10 @@ export default function TasksPage() {
   const selectedTask = tasks.find((t) => t.id === selectedTaskId) ?? null;
 
   const handleAddTask = async () => {
+    if (isAdding) return;
+    setIsAdding(true);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) { setIsAdding(false); return; }
 
     const dueDate = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
@@ -87,9 +91,11 @@ export default function TasksPage() {
       setSelectedTaskId(newTask.id);
       setIsEditing(true);
     }
+    setIsAdding(false);
   };
 
   const handleDeleteTask = async (id: string) => {
+    if (!window.confirm("Delete this task? This cannot be undone.")) return;
     await supabase.from("tasks").delete().eq("id", id);
     setTasks((prev) => prev.filter((t) => t.id !== id));
     setSelectedTaskId((prev) => {
@@ -99,6 +105,7 @@ export default function TasksPage() {
   };
 
   const handleSaveTask = async (updated: Task) => {
+    setIsSaving(true);
     const { error } = await supabase
       .from("tasks")
       .update({
@@ -114,6 +121,7 @@ export default function TasksPage() {
     } else {
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     }
+    setIsSaving(false);
   };
 
   const handleToggleComplete = async (id: string) => {
@@ -167,6 +175,7 @@ export default function TasksPage() {
             selectedTaskId={selectedTaskId}
             onSelectTask={setSelectedTaskId}
             onAddTask={handleAddTask}
+            isAdding={isAdding}
             onToggleComplete={handleToggleComplete}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -184,6 +193,7 @@ export default function TasksPage() {
             onEditToggle={() => setIsEditing(!isEditing)}
             onToggleComplete={handleToggleComplete}
             onSave={handleSaveTask}
+            isSaving={isSaving}
           />
         </div>
       </div>

@@ -18,6 +18,7 @@ interface TasksDetailProps {
   onEditToggle: () => void;
   onToggleComplete: (id: string) => void;
   onSave: (updated: Task) => void;
+  isSaving?: boolean;
 }
 
 export default function TasksDetail({
@@ -28,6 +29,7 @@ export default function TasksDetail({
   onEditToggle,
   onToggleComplete,
   onSave,
+  isSaving = false,
 }: TasksDetailProps) {
   const [localTitle, setLocalTitle] = useState("");
   const [localDescription, setLocalDescription] = useState("");
@@ -151,9 +153,10 @@ export default function TasksDetail({
         <div className="flex items-center gap-2">
           <button
             onClick={isEditing ? handleDone : onEditToggle}
-            className="px-4 py-2 bg-[#231E1F] text-amber-50 rounded-lg hover:bg-[#231E1F]/90 transition-colors font-semibold text-sm [font-family:var(--font-outfit)]"
+            disabled={isSaving}
+            className="px-4 py-2 bg-[#231E1F] text-amber-50 rounded-lg hover:bg-[#231E1F]/90 transition-colors font-semibold text-sm [font-family:var(--font-outfit)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isEditing ? "Save" : "Edit"}
+            {isSaving ? "Saving…" : isEditing ? "Save" : "Edit"}
           </button>
           <button
             onClick={() => onDelete(task.id)}

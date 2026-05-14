@@ -16,6 +16,7 @@ interface NotesDetailProps {
   isEditing: boolean;
   onEditToggle: () => void;
   onSave: (updatedNote: Note) => void;
+  isSaving?: boolean;
 }
 
 export default function NotesDetail({
@@ -25,6 +26,7 @@ export default function NotesDetail({
   isEditing,
   onEditToggle,
   onSave,
+  isSaving = false,
 }: NotesDetailProps) {
   const [localTitle, setLocalTitle] = useState("");
   const [localContent, setLocalContent] = useState("");
@@ -86,9 +88,10 @@ export default function NotesDetail({
         <div className="flex items-center gap-2">
           <button
             onClick={isEditing ? handleSave : onEditToggle}
-            className="px-4 py-2 bg-[#231E1F] text-amber-50 rounded-lg hover:bg-[#231E1F]/90 transition-colors font-semibold text-sm [font-family:var(--font-outfit)]"
+            disabled={isSaving}
+            className="px-4 py-2 bg-[#231E1F] text-amber-50 rounded-lg hover:bg-[#231E1F]/90 transition-colors font-semibold text-sm [font-family:var(--font-outfit)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isEditing ? "Save" : "Edit"}
+            {isSaving ? "Saving…" : isEditing ? "Save" : "Edit"}
           </button>
           <button
             onClick={() => onDelete(note.id)}

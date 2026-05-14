@@ -42,6 +42,8 @@ export default function NotesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -70,17 +72,16 @@ export default function NotesPage() {
   const selectedNote = notes.find((n) => n.id === selectedNoteId) ?? null;
 
   const handleAddNote = async () => {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    console.log("session:", session, "sessionError:", sessionError);
-    if (!session) { setDbError("No session — please log in again."); return; }
+    if (isAdding) return;
+    setIsAdding(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setDbError("No session — please log in again."); setIsAdding(false); return; }
 
     const { data, error } = await supabase
       .from("notes")
       .insert({ user_id: session.user.id, title: "New Note", preview: "Click to edit...", content: "" })
       .select()
       .single();
-
-    console.log("insert result:", { data, error });
 
     if (error) {
       setDbError(`Insert failed: ${error.message} (code: ${error.code})`);
@@ -90,9 +91,11 @@ export default function NotesPage() {
       setSelectedNoteId(newNote.id);
       setIsEditing(true);
     }
+    setIsAdding(false);
   };
 
   const handleSaveNote = async (updated: Note) => {
+    setIsSaving(true);
     const preview = (updated.content ?? "").slice(0, 80) || updated.title;
     const { error } = await supabase
       .from("notes")
@@ -111,9 +114,11 @@ export default function NotesPage() {
         prev.map((n) => (n.id === updated.id ? { ...updated, preview, updatedAt: "just now" } : n))
       );
     }
+    setIsSaving(false);
   };
 
   const handleDeleteNote = async (id: string) => {
+    if (!window.confirm("Delete this note? This cannot be undone.")) return;
     await supabase.from("notes").delete().eq("id", id);
     setNotes((prev) => prev.filter((n) => n.id !== id));
     setSelectedNoteId((prev) => {
@@ -157,6 +162,7 @@ export default function NotesPage() {
             selectedNoteId={selectedNoteId}
             onSelectNote={setSelectedNoteId}
             onAddNote={handleAddNote}
+            isAdding={isAdding}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
           />
@@ -170,6 +176,7 @@ export default function NotesPage() {
             isEditing={isEditing}
             onEditToggle={() => setIsEditing(!isEditing)}
             onSave={handleSaveNote}
+            isSaving={isSaving}
           />
         </div>
       </div>
