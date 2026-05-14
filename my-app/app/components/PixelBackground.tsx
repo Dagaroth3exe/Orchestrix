@@ -11,14 +11,14 @@ export default function PixelBackground() {
           gridCols={32}
           gridRows={24}
           colorMode="monochrome"
-          monochromeColor="#4f7cff"
-          darken={0.4}
+          monochromeColor="#f59e0b"
+          darken={0.3}
           gapRatio={0.25}
           maxElevation={8}
           borderOpacity={0.025}
         />
       </div>
-      <div className="absolute inset-0 z-10 bg-black/65" />
+      <div className="absolute inset-0 z-10 bg-[#231E1F]/75" />
     </>
   );
 }
