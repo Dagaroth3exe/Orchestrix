@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { BookOpen, CheckSquare, Bell, Clock, User, ArrowRight } from "lucide-react";
+import { BookOpen, CheckSquare, Bell, Clock, User, ArrowRight, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ShortBlackLogo from "@/app/Assets/Short black logo.png";
 import NoteCard from "@/app/components/NoteCard";
 import TaskCard from "@/app/components/TaskCard";
@@ -38,11 +38,33 @@ export default function DashboardPage() {
   const router = useRouter();
   const [recentNotes, setRecentNotes] = useState<RecentNote[]>([]);
   const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
+  const [userEmail, setUserEmail] = useState("");
+  const [userName, setUserName] = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/Login");
+  };
 
   useEffect(() => {
     async function fetchRecent() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
+
+      setUserEmail(session.user.email ?? "");
+      setUserName(session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? "");
 
       const [notesRes, tasksRes] = await Promise.all([
         supabase.from("notes").select("id, title, preview, updated_at").eq("user_id", session.user.id).order("updated_at", { ascending: false }).limit(3),
@@ -104,17 +126,40 @@ export default function DashboardPage() {
               </button>
             ))}
           </div>
-          <button
-            aria-label="Profile"
-            className="group relative mt-auto mb-2 h-9 w-9 overflow-hidden rounded-xl border-[5px] border-zinc-200 bg-zinc-300 text-zinc-950 shadow-[0_8px_18px_rgba(0,0,0,0.18)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:w-20 hover:border-zinc-300 hover:bg-zinc-200 hover:shadow-[0_12px_24px_rgba(0,0,0,0.22)] hover:-translate-y-0.5"
-          >
-            <span className="absolute inset-0 grid place-items-center transition-all duration-300 ease-out group-hover:opacity-0 group-hover:scale-90">
-              <User className="size-5" style={{ color: "#231E1F" }} />
-            </span>
-            <span className="absolute inset-0 flex items-center justify-center text-[14px] font-semibold tracking-[0.04em] [font-family:var(--font-outfit)] opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:scale-100">
-              Profile
-            </span>
-          </button>
+          {/* Desktop profile button + popover */}
+          <div ref={profileRef} className="relative mt-auto mb-2">
+            {profileOpen && (
+              <div className="absolute bottom-full left-0 mb-3 w-56 bg-[#231E1F] rounded-2xl shadow-2xl overflow-hidden z-50">
+                <div className="p-4 border-b border-white/10">
+                  <p className="text-white font-semibold text-sm [font-family:var(--font-outfit)] truncate">
+                    {userName || "User"}
+                  </p>
+                  <p className="text-gray-400 text-xs mt-0.5 [font-family:var(--font-outfit)] truncate">
+                    {userEmail}
+                  </p>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-white/10 transition-colors text-sm font-semibold [font-family:var(--font-outfit)]"
+                >
+                  <LogOut className="size-4" />
+                  Sign out
+                </button>
+              </div>
+            )}
+            <button
+              aria-label="Profile"
+              onClick={() => setProfileOpen((o) => !o)}
+              className="group relative h-9 w-9 overflow-hidden rounded-xl border-[5px] border-zinc-200 bg-zinc-300 text-zinc-950 shadow-[0_8px_18px_rgba(0,0,0,0.18)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:w-20 hover:border-zinc-300 hover:bg-zinc-200 hover:shadow-[0_12px_24px_rgba(0,0,0,0.22)] hover:-translate-y-0.5"
+            >
+              <span className="absolute inset-0 grid place-items-center transition-all duration-300 ease-out group-hover:opacity-0 group-hover:scale-90">
+                <User className="size-5" style={{ color: "#231E1F" }} />
+              </span>
+              <span className="absolute inset-0 flex items-center justify-center text-[14px] font-semibold tracking-[0.04em] [font-family:var(--font-outfit)] opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:scale-100">
+                Profile
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Main area */}
@@ -124,9 +169,34 @@ export default function DashboardPage() {
             <button onClick={() => router.push("/")} aria-label="Home">
               <Image src={ShortBlackLogo} alt="Logo" width={48} height={54} className="object-contain" />
             </button>
-            <button aria-label="Profile" className="h-9 w-9 rounded-xl border-[5px] border-zinc-200 bg-zinc-300 grid place-items-center">
-              <User className="size-5" style={{ color: "#231E1F" }} />
-            </button>
+            <div ref={profileOpen ? undefined : undefined} className="relative">
+              <button
+                aria-label="Profile"
+                onClick={() => setProfileOpen((o) => !o)}
+                className="h-9 w-9 rounded-xl border-[5px] border-zinc-200 bg-zinc-300 grid place-items-center"
+              >
+                <User className="size-5" style={{ color: "#231E1F" }} />
+              </button>
+              {profileOpen && (
+                <div className="absolute top-full right-0 mt-2 w-56 bg-[#231E1F] rounded-2xl shadow-2xl overflow-hidden z-50">
+                  <div className="p-4 border-b border-white/10">
+                    <p className="text-white font-semibold text-sm [font-family:var(--font-outfit)] truncate">
+                      {userName || "User"}
+                    </p>
+                    <p className="text-gray-400 text-xs mt-0.5 [font-family:var(--font-outfit)] truncate">
+                      {userEmail}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-white/10 transition-colors text-sm font-semibold [font-family:var(--font-outfit)]"
+                  >
+                    <LogOut className="size-4" />
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Dashboard content */}
