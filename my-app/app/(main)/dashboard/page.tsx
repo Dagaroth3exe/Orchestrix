@@ -79,15 +79,12 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="w-full max-w-none mx-auto h-[calc(100vh-2rem)] overflow-hidden">
-      <div className="Main bg-amber-50/80 h-full w-full rounded-2xl p-3 flex gap-3">
-        <div className="h-full w-[7%] flex flex-col items-center justify-start pt-2 px-2">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            aria-label="Go to intro screen"
-            className="cursor-pointer"
-          >
+    <div className="w-full h-full">
+      <div className="Main bg-amber-50/80 h-full w-full rounded-2xl p-3 flex flex-col md:flex-row gap-3">
+
+        {/* Sidebar — desktop only */}
+        <div className="hidden md:flex h-full w-[7%] flex-col items-center justify-start pt-2 px-2">
+          <button type="button" onClick={() => router.push("/")} aria-label="Go to intro screen" className="cursor-pointer">
             <Image src={ShortBlackLogo} alt="Logo" width={72} height={80} className="object-contain" />
           </button>
           <div className="mt-8 flex flex-col gap-4 items-center">
@@ -119,14 +116,25 @@ export default function DashboardPage() {
             </span>
           </button>
         </div>
-        <div className="h-full w-full">
-          {/* Dashboard */}
-          <div className="InfoBox flex flex-col gap-2 bg-amber-50 h-full w-full rounded-2xl p-6 pl-8"> 
 
+        {/* Main area */}
+        <div className="flex-1 flex flex-col min-h-0 gap-3">
+          {/* Mobile top bar */}
+          <div className="flex md:hidden items-center justify-between px-1 pt-1">
+            <button onClick={() => router.push("/")} aria-label="Home">
+              <Image src={ShortBlackLogo} alt="Logo" width={48} height={54} className="object-contain" />
+            </button>
+            <button aria-label="Profile" className="h-9 w-9 rounded-xl border-[5px] border-zinc-200 bg-zinc-300 grid place-items-center">
+              <User className="size-5" style={{ color: "#231E1F" }} />
+            </button>
+          </div>
+
+          {/* Dashboard content */}
+          <div className="InfoBox flex flex-col gap-4 bg-amber-50 flex-1 min-h-0 w-full rounded-2xl p-4 md:p-6 md:pl-8 overflow-y-auto">
             {/* Recent Notes */}
-            <div className="">
+            <div>
               <div className="flex items-center justify-between mb-4">
-                <div className="RecentNote text-4xl text-[#231E1F] [font-family:var(--font-outfit)] font-semibold">
+                <div className="text-2xl md:text-4xl text-[#231E1F] [font-family:var(--font-outfit)] font-semibold">
                   Recent Notes
                 </div>
                 <button
@@ -136,7 +144,7 @@ export default function DashboardPage() {
                   View All <ArrowRight className="size-4" />
                 </button>
               </div>
-              <div className="flex gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row gap-4 mb-2">
                 {recentNotes.length === 0 ? (
                   <p className="text-[#231E1F]/40 text-sm [font-family:var(--font-outfit)] py-2">
                     No notes yet — create one in Notes.
@@ -154,11 +162,11 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-             
+
             {/* Recent Tasks */}
-            <div className="">
+            <div>
               <div className="flex items-center justify-between mb-4">
-                <div className="RecentTask text-4xl text-[#231E1F] [font-family:var(--font-outfit)] font-semibold">
+                <div className="text-2xl md:text-4xl text-[#231E1F] [font-family:var(--font-outfit)] font-semibold">
                   Recent Tasks
                 </div>
                 <button
@@ -168,7 +176,7 @@ export default function DashboardPage() {
                   View All <ArrowRight className="size-4" />
                 </button>
               </div>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 {recentTasks.length === 0 ? (
                   <p className="text-[#231E1F]/40 text-sm [font-family:var(--font-outfit)] py-2">
                     No tasks yet — create one in Tasks.
@@ -187,6 +195,21 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Mobile bottom nav */}
+          <div className="flex md:hidden items-center justify-around bg-amber-50 rounded-2xl py-3 px-4">
+            {navButtons.map(({ icon: Icon, label }) => (
+              <button
+                key={label}
+                onClick={() => router.push(`/${label}`)}
+                aria-label={label}
+                className="flex flex-col items-center gap-1 text-[#231E1F] hover:opacity-70 transition-opacity"
+              >
+                <Icon className="size-5" />
+                <span className="text-[10px] font-semibold [font-family:var(--font-outfit)]">{label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>

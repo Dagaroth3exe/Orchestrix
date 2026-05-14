@@ -47,7 +47,7 @@ export default function TasksList({
   });
 
   return (
-    <div className="w-[30%] bg-[#231E1F] rounded-2xl p-4 flex flex-col h-full">
+    <div className="w-full md:w-[30%] bg-[#231E1F] rounded-2xl p-4 flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-white text-2xl font-semibold [font-family:var(--font-outfit)]">

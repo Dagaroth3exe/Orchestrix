@@ -108,8 +108,8 @@ export default function FocusPage() {
       </div>
 
       {/* Main Timer - two column layout */}
-      <div className="flex-1 overflow-hidden p-8">
-        <div className="flex gap-8 h-full max-w-4xl mx-auto">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="flex flex-col lg:flex-row gap-8 min-h-full max-w-4xl mx-auto">
 
           {/* Left column: Timer + Controls — always fully visible */}
           <div className="flex flex-col items-center justify-center gap-6 flex-1">
@@ -195,7 +195,7 @@ export default function FocusPage() {
           </div>
 
           {/* Right column: Settings — can scroll if needed */}
-          <div className="flex flex-col gap-4 w-72 overflow-y-auto py-1">
+          <div className="flex flex-col gap-4 w-full lg:w-72 py-1">
             {/* Quick Presets */}
             <div className="bg-white rounded-2xl p-6 border border-[#231E1F]/10">
               <h3 className="text-sm font-semibold text-[#231E1F] mb-3 [font-family:var(--font-outfit)]">

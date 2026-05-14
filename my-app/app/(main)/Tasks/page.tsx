@@ -155,27 +155,32 @@ export default function TasksPage() {
           Back to Dashboard
         </button>
       </div>
-      <div className="flex-1 p-6 flex gap-4 overflow-hidden">
-        <TasksList
-          tasks={tasks}
-          selectedTaskId={selectedTaskId}
-          onSelectTask={setSelectedTaskId}
-          onAddTask={handleAddTask}
-          onToggleComplete={handleToggleComplete}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          filterPriority={filterPriority}
-          onFilterChange={setFilterPriority}
-        />
-        <TasksDetail
-          task={selectedTask}
-          onDelete={handleDeleteTask}
-          onBack={() => setSelectedTaskId(null)}
-          isEditing={isEditing}
-          onEditToggle={() => setIsEditing(!isEditing)}
-          onToggleComplete={handleToggleComplete}
-          onSave={handleSaveTask}
-        />
+      <div className="flex-1 p-3 md:p-6 flex gap-4 overflow-hidden">
+        {/* On mobile: show list when nothing selected, detail when selected */}
+        <div className={`${selectedTaskId ? "hidden md:flex" : "flex"} w-full md:w-auto`}>
+          <TasksList
+            tasks={tasks}
+            selectedTaskId={selectedTaskId}
+            onSelectTask={setSelectedTaskId}
+            onAddTask={handleAddTask}
+            onToggleComplete={handleToggleComplete}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            filterPriority={filterPriority}
+            onFilterChange={setFilterPriority}
+          />
+        </div>
+        <div className={`${selectedTaskId ? "flex" : "hidden md:flex"} w-full md:w-auto`}>
+          <TasksDetail
+            task={selectedTask}
+            onDelete={handleDeleteTask}
+            onBack={() => setSelectedTaskId(null)}
+            isEditing={isEditing}
+            onEditToggle={() => setIsEditing(!isEditing)}
+            onToggleComplete={handleToggleComplete}
+            onSave={handleSaveTask}
+          />
+        </div>
       </div>
     </div>
   );

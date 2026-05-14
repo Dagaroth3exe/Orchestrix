@@ -145,23 +145,28 @@ export default function NotesPage() {
           Back to Dashboard
         </button>
       </div>
-      <div className="flex-1 p-6 flex gap-4 overflow-hidden">
-        <NotesList
-          notes={notes}
-          selectedNoteId={selectedNoteId}
-          onSelectNote={setSelectedNoteId}
-          onAddNote={handleAddNote}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
-        <NotesDetail
-          note={selectedNote}
-          onDelete={handleDeleteNote}
-          onBack={() => setSelectedNoteId(null)}
-          isEditing={isEditing}
-          onEditToggle={() => setIsEditing(!isEditing)}
-          onSave={handleSaveNote}
-        />
+      <div className="flex-1 p-3 md:p-6 flex gap-4 overflow-hidden">
+        {/* On mobile: show list when nothing selected, detail when selected */}
+        <div className={`${selectedNoteId ? "hidden md:flex" : "flex"} w-full md:w-auto`}>
+          <NotesList
+            notes={notes}
+            selectedNoteId={selectedNoteId}
+            onSelectNote={setSelectedNoteId}
+            onAddNote={handleAddNote}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+        </div>
+        <div className={`${selectedNoteId ? "flex" : "hidden md:flex"} w-full md:w-auto`}>
+          <NotesDetail
+            note={selectedNote}
+            onDelete={handleDeleteNote}
+            onBack={() => setSelectedNoteId(null)}
+            isEditing={isEditing}
+            onEditToggle={() => setIsEditing(!isEditing)}
+            onSave={handleSaveNote}
+          />
+        </div>
       </div>
     </div>
   );

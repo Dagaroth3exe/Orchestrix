@@ -16,7 +16,7 @@ export default function TaskCard({ title, description, priority, dueDate, onClic
   return (
     <div
       onClick={onClick}
-      className="bg-[#231E1F] h-60 w-90 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer [font-family:var(--font-outfit)]"
+      className="bg-[#231E1F] h-60 w-full sm:w-80 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer [font-family:var(--font-outfit)]"
     >
       <div className="flex flex-col h-full justify-between">
         <div>

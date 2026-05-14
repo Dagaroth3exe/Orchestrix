@@ -71,12 +71,12 @@ export default function TasksDetail({
   };
 
   return (
-    <div className="w-[70%] bg-amber-50 rounded-2xl p-8 flex flex-col h-full overflow-y-auto">
+    <div className="w-full md:w-[70%] bg-amber-50 rounded-2xl p-4 md:p-8 flex flex-col h-full overflow-y-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-6 pb-4 border-b border-[#231E1F]/10">
         <button
           onClick={onBack}
-          className="lg:hidden flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity"
+          className="md:hidden flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity"
         >
           <ArrowLeft className="size-5" />
         </button>
