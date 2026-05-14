@@ -52,6 +52,7 @@ export default function NotesPage() {
       const { data, error } = await supabase
         .from("notes")
         .select("*")
+        .eq("user_id", session.user.id)
         .order("updated_at", { ascending: false });
 
       if (error) {

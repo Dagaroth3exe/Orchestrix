@@ -45,8 +45,8 @@ export default function DashboardPage() {
       if (!session) return;
 
       const [notesRes, tasksRes] = await Promise.all([
-        supabase.from("notes").select("id, title, preview, updated_at").order("updated_at", { ascending: false }).limit(3),
-        supabase.from("tasks").select("id, title, description, priority, due_date").order("created_at", { ascending: false }).limit(3),
+        supabase.from("notes").select("id, title, preview, updated_at").eq("user_id", session.user.id).order("updated_at", { ascending: false }).limit(3),
+        supabase.from("tasks").select("id, title, description, priority, due_date").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(3),
       ]);
 
       if (notesRes.data) {

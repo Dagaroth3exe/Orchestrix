@@ -34,6 +34,7 @@ export default function AlertsPage() {
       const { data, error } = await supabase
         .from("alerts")
         .select("*")
+        .eq("user_id", session.user.id)
         .order("created_at", { ascending: false });
 
       if (!error && data) setAlerts(data as Alert[]);
