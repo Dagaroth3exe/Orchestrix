@@ -136,7 +136,7 @@ export default function NotesPage() {
           Supabase error: {dbError}
         </div>
       )}
-      <div className="px-6 py-4 border-b border-[#231E1F]/10">
+      <div className="px-6 py-4 border-b border-[#231E1F]/10 flex items-center justify-between">
         <button
           onClick={() => router.push("/dashboard")}
           className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
@@ -144,6 +144,9 @@ export default function NotesPage() {
           <ArrowLeft className="size-5" />
           Back to Dashboard
         </button>
+        <h1 className="text-3xl text-[#231E1F] font-semibold [font-family:var(--font-outfit)]">
+          Notes
+        </h1>
       </div>
       <div className="flex-1 p-3 md:p-6 flex gap-4 overflow-hidden">
         {/* List: full-width on mobile (hidden when note selected), 30% on desktop */}
