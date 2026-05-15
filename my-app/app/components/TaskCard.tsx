@@ -6,6 +6,13 @@ interface TaskCardProps {
   onClick?: () => void;
 }
 
+function formatDate(raw: string): string {
+  if (!raw) return "No date";
+  const d = new Date(raw + "T00:00:00");
+  if (isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
+
 export default function TaskCard({ title, description, priority, dueDate, onClick }: TaskCardProps) {
   const priorityColors = {
     high: "bg-red-500",
@@ -34,7 +41,7 @@ export default function TaskCard({ title, description, priority, dueDate, onClic
           </p>
         </div>
         <p className="text-gray-400 text-xs">
-          Due: {dueDate}
+          Due: {formatDate(dueDate)}
         </p>
       </div>
     </div>

@@ -14,6 +14,21 @@ interface Alert {
   read: boolean;
 }
 
+function formatTimestamp(raw: string): string {
+  if (!raw) return "";
+  const date = new Date(raw);
+  if (isNaN(date.getTime())) return raw;
+  const diff = Date.now() - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 const typeIcons = {
   info: "ℹ️",
   warning: "⚠️",
@@ -115,7 +130,7 @@ export default function AlertsPage() {
                         )}
                       </div>
                       <p className="text-gray-300 text-sm mt-1">{alert.message}</p>
-                      <p className="text-gray-500 text-xs mt-2">{alert.timestamp}</p>
+                      <p className="text-gray-500 text-xs mt-2">{formatTimestamp(alert.timestamp)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
