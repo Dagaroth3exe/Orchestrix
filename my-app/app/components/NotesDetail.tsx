@@ -58,7 +58,7 @@ export default function NotesDetail({
   };
 
   return (
-    <div className="w-full bg-amber-50 rounded-2xl p-4 md:p-8 flex flex-col h-full overflow-y-auto">
+    <div className="w-full bg-amber-50 rounded-2xl p-4 md:p-8 flex flex-col min-h-0 flex-1 overflow-y-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#231E1F]/10">
         <button

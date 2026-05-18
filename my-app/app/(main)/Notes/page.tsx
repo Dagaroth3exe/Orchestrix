@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import NotesList from "@/app/components/NotesList";
 import NotesDetail from "@/app/components/NotesDetail";
+import SmartNoteAnalyzer from "@/app/components/SmartNoteAnalyzer";
 import { supabase } from "@/lib/supabase";
 
 interface Note {
@@ -142,17 +143,20 @@ export default function NotesPage() {
           Supabase error: {dbError}
         </div>
       )}
-      <div className="px-6 py-4 border-b border-[#231E1F]/10 flex items-center justify-between">
-        <button
-          onClick={() => router.push("/dashboard")}
-          className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
-        >
-          <ArrowLeft className="size-5" />
-          Back to Dashboard
-        </button>
+      <div className="px-6 py-4 border-b border-[#231E1F]/10 flex items-center">
+        <div className="flex-1">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
+          >
+            <ArrowLeft className="size-5" />
+            Back to Dashboard
+          </button>
+        </div>
         <h1 className="text-3xl text-[#231E1F] font-semibold [font-family:var(--font-outfit)]">
           Notes
         </h1>
+        <div className="flex-1" />
       </div>
       <div className="flex-1 p-3 md:p-6 flex gap-4 overflow-hidden">
         {/* List: full-width on mobile (hidden when note selected), 30% on desktop */}
@@ -168,7 +172,7 @@ export default function NotesPage() {
           />
         </div>
         {/* Detail: full-width on mobile (hidden when no note), fills remaining space on desktop */}
-        <div className={`h-full flex-1 min-w-0 ${selectedNoteId ? "block" : "hidden md:block"}`}>
+        <div className={`h-full flex-1 min-w-0 flex flex-col gap-3 overflow-y-auto ${selectedNoteId ? "flex" : "hidden md:flex"}`}>
           <NotesDetail
             note={selectedNote}
             onDelete={handleDeleteNote}
@@ -178,6 +182,7 @@ export default function NotesPage() {
             onSave={handleSaveNote}
             isSaving={isSaving}
           />
+          <SmartNoteAnalyzer note={selectedNote} />
         </div>
       </div>
     </div>

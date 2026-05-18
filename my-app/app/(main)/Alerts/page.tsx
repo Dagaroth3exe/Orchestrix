@@ -83,15 +83,17 @@ export default function AlertsPage() {
   return (
     <div className="w-full h-full flex flex-col bg-amber-50 rounded-2xl overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-[#231E1F]/10 flex items-center justify-between">
-        <button
-          onClick={() => router.push("/dashboard")}
-          className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
-        >
-          <ArrowLeft className="size-5" />
-          Back to Dashboard
-        </button>
-        <div className="text-right">
+      <div className="px-6 py-4 border-b border-[#231E1F]/10 flex items-center">
+        <div className="flex-1">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
+          >
+            <ArrowLeft className="size-5" />
+            Back to Dashboard
+          </button>
+        </div>
+        <div className="text-center">
           <h1 className="text-3xl text-[#231E1F] font-semibold [font-family:var(--font-outfit)]">
             Alerts
           </h1>
@@ -101,6 +103,7 @@ export default function AlertsPage() {
             </p>
           )}
         </div>
+        <div className="flex-1" />
       </div>
 
       {/* Alerts List */}

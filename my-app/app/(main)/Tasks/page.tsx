@@ -155,17 +155,20 @@ export default function TasksPage() {
           Supabase error: {dbError}
         </div>
       )}
-      <div className="px-6 py-4 border-b border-[#231E1F]/10 flex items-center justify-between">
-        <button
-          onClick={() => router.push("/dashboard")}
-          className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
-        >
-          <ArrowLeft className="size-5" />
-          Back to Dashboard
-        </button>
+      <div className="px-6 py-4 border-b border-[#231E1F]/10 flex items-center">
+        <div className="flex-1">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
+          >
+            <ArrowLeft className="size-5" />
+            Back to Dashboard
+          </button>
+        </div>
         <h1 className="text-3xl text-[#231E1F] font-semibold [font-family:var(--font-outfit)]">
           Tasks
         </h1>
+        <div className="flex-1" />
       </div>
       <div className="flex-1 p-3 md:p-6 flex gap-4 overflow-hidden">
         {/* List: full-width on mobile (hidden when task selected), 30% on desktop */}
