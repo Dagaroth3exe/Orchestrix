@@ -74,27 +74,27 @@ export default function AlertsPage() {
 
   if (loading) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-amber-50 rounded-2xl">
-        <p className="text-[#231E1F]/50 [font-family:var(--font-outfit)]">Loading…</p>
+      <div className="w-full h-full flex items-center justify-center bg-amber-50 dark:bg-zinc-950 rounded-2xl transition-colors duration-200">
+        <p className="text-[#231E1F]/50 dark:text-zinc-500 [font-family:var(--font-outfit)]">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-amber-50 rounded-2xl overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-amber-50 dark:bg-zinc-950 rounded-2xl overflow-hidden transition-colors duration-200">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-[#231E1F]/10 flex items-center">
+      <div className="px-6 py-4 border-b border-[#231E1F]/10 dark:border-zinc-800 flex items-center">
         <div className="flex-1">
           <button
             onClick={() => router.push("/dashboard")}
-            className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
+            className="flex items-center gap-2 text-[#231E1F] dark:text-zinc-300 hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
           >
             <ArrowLeft className="size-5" />
             Back to Dashboard
           </button>
         </div>
         <div className="text-center">
-          <h1 className="text-3xl text-[#231E1F] font-semibold [font-family:var(--font-outfit)]">
+          <h1 className="text-3xl text-[#231E1F] dark:text-zinc-100 font-semibold [font-family:var(--font-outfit)]">
             Alerts
           </h1>
           {unreadCount > 0 && (
@@ -111,7 +111,7 @@ export default function AlertsPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           {alerts.length === 0 ? (
             <div className="text-center py-12">
-              <Bell className="size-16 text-[#231E1F]/20 mx-auto mb-4" />
+              <Bell className="size-16 text-[#231E1F]/20 dark:text-zinc-700 mx-auto mb-4" />
               <p className="text-[#231E1F]/50 text-lg [font-family:var(--font-outfit)]">
                 No alerts at this time
               </p>
@@ -120,7 +120,7 @@ export default function AlertsPage() {
             alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="p-4 rounded-2xl border-l-4 transition-all [font-family:var(--font-outfit)] bg-[#231E1F] border-white/10"
+                className="p-4 rounded-2xl border-l-4 transition-all [font-family:var(--font-outfit)] bg-[#231E1F] dark:bg-zinc-700 border-white/10"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3 flex-1">

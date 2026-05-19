@@ -88,20 +88,20 @@ export default function FocusPage() {
     (isBreak ? breakDuration * 60 : sessionDuration * 60);
 
   return (
-    <div className="w-full h-full flex flex-col bg-amber-50 rounded-2xl overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-amber-50 dark:bg-zinc-950 rounded-2xl overflow-hidden transition-colors duration-200">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-[#231E1F]/10">
+      <div className="px-6 py-4 border-b border-[#231E1F]/10 dark:border-zinc-800">
         <button
           onClick={() => router.push("/dashboard")}
-          className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold mb-4"
+          className="flex items-center gap-2 text-[#231E1F] dark:text-zinc-300 hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold mb-4"
         >
           <ArrowLeft className="size-5" />
           Back to Dashboard
         </button>
-        <h1 className="text-3xl text-[#231E1F] font-semibold [font-family:var(--font-outfit)]">
+        <h1 className="text-3xl text-[#231E1F] dark:text-zinc-100 font-semibold [font-family:var(--font-outfit)]">
           Focus Timer
         </h1>
-        <p className="text-[#231E1F]/60 text-sm mt-2">
+        <p className="text-[#231E1F]/60 dark:text-zinc-400 text-sm mt-2">
           {isBreak ? "Break Time" : "Focus Session"} • {sessionsCompleted}{" "}
           session{sessionsCompleted !== 1 ? "s" : ""} completed
         </p>
@@ -115,10 +115,10 @@ export default function FocusPage() {
           <div className="flex flex-col items-center justify-center gap-6 flex-1">
             {/* Status Indicator */}
             <div className="text-center">
-              <p className="text-2xl text-[#231E1F]/60 font-semibold [font-family:var(--font-outfit)] mb-1">
+              <p className="text-2xl text-[#231E1F]/60 dark:text-zinc-400 font-semibold [font-family:var(--font-outfit)] mb-1">
                 {isBreak ? "🎉 Break Time" : "🎯 Stay Focused"}
               </p>
-              <p className="text-sm text-[#231E1F]/50 [font-family:var(--font-outfit)]">
+              <p className="text-sm text-[#231E1F]/50 dark:text-zinc-500 [font-family:var(--font-outfit)]">
                 {sessionsCompleted} session{sessionsCompleted !== 1 ? "s" : ""} completed today
               </p>
             </div>
@@ -131,25 +131,27 @@ export default function FocusPage() {
                   cy="100"
                   r="90"
                   fill="none"
-                  stroke="#231E1F"
+                  stroke="currentColor"
                   strokeWidth="8"
                   opacity="0.1"
+                  className="text-[#231E1F] dark:text-zinc-500"
                 />
                 <circle
                   cx="100"
                   cy="100"
                   r="90"
                   fill="none"
-                  stroke="#231E1F"
+                  stroke="currentColor"
                   strokeWidth="8"
                   strokeDasharray={`${progressPercentage * 565.48} 565.48`}
+                  className="text-[#231E1F] dark:text-zinc-300"
                   strokeLinecap="round"
                   transform="rotate(-90 100 100)"
                   style={{ transition: "stroke-dasharray 1s linear" }}
                 />
               </svg>
               <div className="text-center z-10">
-                <div className="text-6xl font-bold text-[#231E1F] [font-family:var(--font-outfit)] tabular-nums">
+                <div className="text-6xl font-bold text-[#231E1F] dark:text-zinc-100 [font-family:var(--font-outfit)] tabular-nums">
                   {formatTime(timeLeft)}
                 </div>
               </div>
@@ -197,8 +199,8 @@ export default function FocusPage() {
           {/* Right column: Settings — can scroll if needed */}
           <div className="flex flex-col gap-4 w-full lg:w-72 py-1">
             {/* Quick Presets */}
-            <div className="bg-white rounded-2xl p-6 border border-[#231E1F]/10">
-              <h3 className="text-sm font-semibold text-[#231E1F] mb-3 [font-family:var(--font-outfit)]">
+            <div className="bg-[#231E1F] dark:bg-zinc-700 rounded-2xl p-6 transition-colors duration-200">
+              <h3 className="text-sm font-semibold text-amber-50 mb-3 [font-family:var(--font-outfit)]">
                 Quick Presets
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -212,8 +214,8 @@ export default function FocusPage() {
                     disabled={isRunning}
                     className={`px-4 py-2 text-sm font-semibold rounded-2xl transition-colors [font-family:var(--font-outfit)] ${
                       sessionDuration === minutes
-                        ? "bg-[#231E1F] text-amber-50"
-                        : "bg-[#231E1F]/10 text-[#231E1F] hover:bg-[#231E1F]/20"
+                        ? "bg-amber-400 text-[#231E1F]"
+                        : "bg-amber-50/10 text-amber-50 hover:bg-amber-50/20"
                     } ${isRunning ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                   >
                     {minutes}m
@@ -223,14 +225,14 @@ export default function FocusPage() {
             </div>
 
             {/* Custom Duration Settings */}
-            <div className="bg-white rounded-2xl p-6 border border-[#231E1F]/10">
-              <h2 className="text-lg font-semibold text-[#231E1F] mb-6 [font-family:var(--font-outfit)]">
+            <div className="bg-[#231E1F] dark:bg-zinc-700 rounded-2xl p-6 transition-colors duration-200">
+              <h2 className="text-lg font-semibold text-amber-50 mb-6 [font-family:var(--font-outfit)]">
                 Custom Duration
               </h2>
               <div className="space-y-6">
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <label className="text-sm font-semibold text-[#231E1F] [font-family:var(--font-outfit)]">
+                    <label className="text-sm font-semibold text-amber-50 [font-family:var(--font-outfit)]">
                       Focus Time: {sessionDuration}m
                     </label>
                   </div>
@@ -246,15 +248,15 @@ export default function FocusPage() {
                         setTimeLeft(newDuration * 60);
                       }
                     }}
-                    className="w-full h-2 bg-[#231E1F]/20 rounded-lg appearance-none cursor-pointer accent-[#231E1F]"
+                    className="w-full h-2 bg-amber-50/20 rounded-lg appearance-none cursor-pointer accent-amber-400"
                     disabled={isRunning}
                   />
-                  <div className="text-xs text-[#231E1F]/50 mt-1">(1-60 minutes)</div>
+                  <div className="text-xs text-amber-50/40 mt-1">(1-60 minutes)</div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <label className="text-sm font-semibold text-[#231E1F] [font-family:var(--font-outfit)]">
+                    <label className="text-sm font-semibold text-amber-50 [font-family:var(--font-outfit)]">
                       Break Time: {breakDuration}m
                     </label>
                   </div>
@@ -264,10 +266,10 @@ export default function FocusPage() {
                     max="15"
                     value={breakDuration}
                     onChange={(e) => setBreakDuration(parseInt(e.target.value))}
-                    className="w-full h-2 bg-[#231E1F]/20 rounded-lg appearance-none cursor-pointer accent-[#231E1F]"
+                    className="w-full h-2 bg-amber-50/20 rounded-lg appearance-none cursor-pointer accent-amber-400"
                     disabled={isRunning}
                   />
-                  <div className="text-xs text-[#231E1F]/50 mt-1">(1-15 minutes)</div>
+                  <div className="text-xs text-amber-50/40 mt-1">(1-15 minutes)</div>
                 </div>
               </div>
             </div>

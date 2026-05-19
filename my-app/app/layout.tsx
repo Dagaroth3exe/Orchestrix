@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Lora, Outfit } from "next/font/google";
 import "./globals.css";
 import PixelBackground from "./components/PixelBackground";
+import { DarkModeProvider } from "./context/DarkMode";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -27,10 +28,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} ${lora.variable} antialiased`}>
-        <div className="relative h-screen w-full overflow-hidden">
-          <PixelBackground />
-          <div className="relative z-20 h-full">{children}</div>
-        </div>
+        <DarkModeProvider>
+          <div className="relative h-screen w-full overflow-hidden">
+            <PixelBackground />
+            <div className="relative z-20 h-full">{children}</div>
+          </div>
+        </DarkModeProvider>
       </body>
     </html>
   );

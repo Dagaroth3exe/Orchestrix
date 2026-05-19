@@ -33,7 +33,7 @@ export default function NotesList({
   );
 
   return (
-    <div className="w-full h-full bg-[#231E1F] rounded-2xl p-4 flex flex-col">
+    <div className="w-full h-full bg-[#231E1F] dark:bg-zinc-700 rounded-2xl p-4 flex flex-col transition-colors duration-200">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-white text-2xl font-semibold [font-family:var(--font-outfit)]">
@@ -57,7 +57,7 @@ export default function NotesList({
           placeholder="Search notes..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-[#2a2522] text-white placeholder-gray-500 rounded-lg border border-gray-700 focus:border-amber-50/30 focus:outline-none [font-family:var(--font-outfit)]"
+          className="w-full pl-10 pr-4 py-2 bg-[#2a2522] dark:bg-zinc-600 text-white placeholder-gray-500 rounded-lg border border-gray-700 dark:border-zinc-500 focus:border-amber-50/30 focus:outline-none [font-family:var(--font-outfit)]"
         />
       </div>
 
@@ -75,7 +75,7 @@ export default function NotesList({
               className={`w-full text-left p-3 rounded-lg transition-all [font-family:var(--font-outfit)] ${
                 selectedNoteId === note.id
                   ? "bg-amber-50/20 border-l-4 border-amber-50"
-                  : "hover:bg-[#2a2522]"
+                  : "hover:bg-[#2a2522] dark:hover:bg-zinc-600"
               }`}
             >
               <h3 className="text-white font-semibold text-sm line-clamp-1">

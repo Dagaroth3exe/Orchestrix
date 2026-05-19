@@ -142,30 +142,30 @@ export default function TasksPage() {
 
   if (loading) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-amber-50 rounded-2xl">
-        <p className="text-[#231E1F]/50 [font-family:var(--font-outfit)]">Loading…</p>
+      <div className="w-full h-full flex items-center justify-center bg-amber-50 dark:bg-zinc-950 rounded-2xl transition-colors duration-200">
+        <p className="text-[#231E1F]/50 dark:text-zinc-500 [font-family:var(--font-outfit)]">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-amber-50 rounded-2xl overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-amber-50 dark:bg-zinc-950 rounded-2xl overflow-hidden transition-colors duration-200">
       {dbError && (
         <div className="bg-red-500 text-white text-sm px-6 py-2 [font-family:var(--font-outfit)]">
           Supabase error: {dbError}
         </div>
       )}
-      <div className="px-6 py-4 border-b border-[#231E1F]/10 flex items-center">
+      <div className="px-6 py-4 border-b border-[#231E1F]/10 dark:border-zinc-800 flex items-center">
         <div className="flex-1">
           <button
             onClick={() => router.push("/dashboard")}
-            className="flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
+            className="flex items-center gap-2 text-[#231E1F] dark:text-zinc-300 hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
           >
             <ArrowLeft className="size-5" />
             Back to Dashboard
           </button>
         </div>
-        <h1 className="text-3xl text-[#231E1F] font-semibold [font-family:var(--font-outfit)]">
+        <h1 className="text-3xl text-[#231E1F] dark:text-zinc-100 font-semibold [font-family:var(--font-outfit)]">
           Tasks
         </h1>
         <div className="flex-1" />

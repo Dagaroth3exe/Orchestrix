@@ -9,7 +9,7 @@ export default function NoteCard({ title, preview, updatedAt, onClick }: NoteCar
   return (
     <div
       onClick={onClick}
-      className="bg-[#231E1F] h-40 w-full sm:w-58 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer [font-family:var(--font-outfit)]"
+      className="bg-[#231E1F] dark:bg-zinc-700 h-40 w-full sm:w-58 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer [font-family:var(--font-outfit)]"
     >
       <div className="flex flex-col h-full justify-between">
         <div>

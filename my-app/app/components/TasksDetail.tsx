@@ -53,8 +53,8 @@ export default function TasksDetail({
 
   if (!task) {
     return (
-      <div className="w-full bg-amber-50 rounded-2xl p-8 flex flex-col items-center justify-center h-full">
-        <p className="text-[#231E1F]/50 text-lg [font-family:var(--font-outfit)]">
+      <div className="w-full bg-amber-50 dark:bg-zinc-950 rounded-2xl p-8 flex flex-col items-center justify-center h-full transition-colors duration-200">
+        <p className="text-[#231E1F]/50 dark:text-zinc-500 text-lg [font-family:var(--font-outfit)]">
           Select a task to view details
         </p>
       </div>
@@ -73,9 +73,9 @@ export default function TasksDetail({
   };
 
   return (
-    <div className="w-full md:w-full bg-amber-50 rounded-2xl p-4 md:p-8 flex flex-col h-full overflow-y-auto">
+    <div className="w-full md:w-full bg-amber-50 dark:bg-zinc-950 rounded-2xl p-4 md:p-8 flex flex-col h-full overflow-y-auto transition-colors duration-200">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 pb-4 border-b border-[#231E1F]/10">
+      <div className="flex items-start justify-between mb-6 pb-4 border-b border-[#231E1F]/10 dark:border-zinc-800">
         <button
           onClick={onBack}
           className="md:hidden flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity"
@@ -101,7 +101,7 @@ export default function TasksDetail({
             ) : (
               <h1
                 className={`text-4xl font-semibold [font-family:var(--font-outfit)] ${
-                  task.completed ? "text-[#231E1F]/50 line-through" : "text-[#231E1F]"
+                  task.completed ? "text-[#231E1F]/50 dark:text-zinc-600 line-through" : "text-[#231E1F] dark:text-zinc-100"
                 }`}
               >
                 {task.title}
@@ -177,13 +177,13 @@ export default function TasksDetail({
             <textarea
               value={localDescription}
               onChange={(e) => setLocalDescription(e.target.value)}
-              className="w-full h-48 p-4 bg-white border border-[#231E1F]/20 rounded-lg text-[#231E1F] focus:outline-none focus:ring-2 focus:ring-[#231E1F] [font-family:var(--font-outfit)] resize-none"
+              className="w-full h-48 p-4 bg-white dark:bg-zinc-800 border border-[#231E1F]/20 dark:border-zinc-600 rounded-lg text-[#231E1F] dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#231E1F] dark:focus:ring-zinc-500 [font-family:var(--font-outfit)] resize-none"
               placeholder="Add task details..."
             />
           </div>
         ) : (
           <div className="prose prose-sm max-w-none [font-family:var(--font-outfit)]">
-            <p className="text-[#231E1F] text-base leading-relaxed whitespace-pre-wrap">
+            <p className="text-[#231E1F] dark:text-zinc-300 text-base leading-relaxed whitespace-pre-wrap">
               {task.description}
             </p>
           </div>
@@ -191,10 +191,10 @@ export default function TasksDetail({
       </div>
 
       {/* Footer */}
-      <div className="mt-6 pt-4 border-t border-[#231E1F]/10">
-        <p className="text-[#231E1F]/60 text-sm [font-family:var(--font-outfit)]">
+      <div className="mt-6 pt-4 border-t border-[#231E1F]/10 dark:border-zinc-800">
+        <p className="text-[#231E1F]/60 dark:text-zinc-500 text-sm [font-family:var(--font-outfit)]">
           Status:{" "}
-          <span className="font-semibold text-[#231E1F]">
+          <span className="font-semibold text-[#231E1F] dark:text-zinc-300">
             {task.completed ? "Completed ✓" : "Pending"}
           </span>
         </p>
