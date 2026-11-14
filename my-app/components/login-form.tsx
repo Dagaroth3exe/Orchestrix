@@ -77,23 +77,23 @@ export function LoginForm({ className }: { className?: string }) {
   const field = cn(inputClass, "h-12");
 
   return (
-    <div className={cn("rounded-[32px] border border-line bg-surface/95 p-6 shadow-lift backdrop-blur-xl md:p-8", className)}>
+    <div className={cn("rounded-3xl border border-line bg-surface p-6 shadow-lift md:p-8", className)}>
       {/* Mode switch */}
-      <div className="relative mb-7 grid grid-cols-2 rounded-full bg-surface-2 p-1">
+      <div className="relative mb-6 grid grid-cols-2 rounded-xl bg-surface-2 p-1">
         {(["login", "register"] as Mode[]).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => switchMode(m)}
             className={cn(
-              "relative rounded-full py-2 text-sm font-medium transition-colors",
+              "relative rounded-lg py-2 text-sm font-medium transition-colors",
               mode === m ? "text-ink-fg" : "text-muted hover:text-fg"
             )}
           >
             {mode === m && (
               <motion.span
                 layoutId="auth-pill"
-                className="absolute inset-0 rounded-full bg-ink"
+                className="absolute inset-0 rounded-lg bg-ink"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}
@@ -103,7 +103,7 @@ export function LoginForm({ className }: { className?: string }) {
       </div>
 
       {isPreview && mode === "login" && (
-        <div className="mb-5 rounded-2xl border border-dashed border-accent/40 bg-accent-soft p-4">
+        <div className="mb-5 rounded-xl border border-dashed border-accent/40 bg-accent-soft p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">preview mode</p>
           <p className="mt-1.5 text-sm text-fg">
             Sign in with <span className="font-medium">{DEMO_EMAIL}</span> / <span className="font-medium">{DEMO_PASSWORD}</span>, or create any account. Data stays in this browser.
@@ -169,13 +169,13 @@ export function LoginForm({ className }: { className?: string }) {
           />
         </label>
 
-        {error && <p className="rounded-2xl bg-danger-soft px-4 py-2.5 text-sm text-danger">{error}</p>}
-        {info && <p className="rounded-2xl bg-success-soft px-4 py-2.5 text-sm text-success">{info}</p>}
+        {error && <p className="rounded-xl bg-danger-soft px-4 py-2.5 text-sm text-danger">{error}</p>}
+        {info && <p className="rounded-xl bg-success-soft px-4 py-2.5 text-sm text-success">{info}</p>}
 
         <button
           type="submit"
           disabled={busy}
-          className="group mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent text-sm font-semibold text-accent-ink transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60"
+          className="group mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent text-sm font-semibold text-accent-ink transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60"
         >
           {busy ? "One moment…" : mode === "login" ? "Enter your day" : "Create my account"}
           {!busy && <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />}

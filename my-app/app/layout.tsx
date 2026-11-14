@@ -14,19 +14,16 @@ const lora = Lora({
   variable: "--font-lora",
   subsets: ["latin"],
   style: ["italic"],
-  weight: ["400", "600"],
 });
 
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
 });
 
 const mono = JetBrains_Mono({
   variable: "--font-mono-face",
   subsets: ["latin"],
-  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
