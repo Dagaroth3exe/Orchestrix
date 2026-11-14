@@ -1,27 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { Plus } from "lucide-react";
 import TasksList from "@/app/components/TasksList";
 import TasksDetail from "@/app/components/TasksDetail";
+import { Btn, ErrorBanner, LoadingState, PageHeader } from "@/app/components/kit";
 import { supabase } from "@/lib/supabase";
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  priority: "high" | "medium" | "low";
-  dueDate: string;
-  completed: boolean;
-}
+import type { Priority, Task } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 function dbRowToTask(row: Record<string, string | boolean>): Task {
   return {
     id: row.id as string,
     title: row.title as string,
     description: row.description as string,
-    priority: row.priority as "high" | "medium" | "low",
+    priority: row.priority as Priority,
     dueDate: row.due_date as string,
     completed: row.completed as boolean,
   };
@@ -31,8 +25,9 @@ export default function TasksPage() {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [showDetailMobile, setShowDetailMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterPriority, setFilterPriority] = useState<"all" | "high" | "medium" | "low">("all");
+  const [filterPriority, setFilterPriority] = useState<"all" | Priority>("all");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -50,10 +45,15 @@ export default function TasksPage() {
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false });
 
-      if (!error && data) {
+      if (error) {
+        setDbError(error.message);
+      } else if (data) {
         const mapped = data.map(dbRowToTask);
         setTasks(mapped);
-        setSelectedTaskId(mapped[0]?.id ?? null);
+        const wanted = new URLSearchParams(window.location.search).get("open");
+        const target = mapped.find((x) => x.id === wanted);
+        setSelectedTaskId(target?.id ?? mapped[0]?.id ?? null);
+        if (target) setShowDetailMobile(true);
       }
       setLoading(false);
     }
@@ -61,21 +61,27 @@ export default function TasksPage() {
   }, [router]);
 
   const selectedTask = tasks.find((t) => t.id === selectedTaskId) ?? null;
+  const openCount = tasks.filter((t) => !t.completed).length;
+
+  const selectTask = (id: string) => {
+    setSelectedTaskId(id);
+    setIsEditing(false);
+    setShowDetailMobile(true);
+  };
 
   const handleAddTask = async () => {
     if (isAdding) return;
     setIsAdding(true);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setIsAdding(false); return; }
+    if (!session) { setDbError("No session — please log in again."); setIsAdding(false); return; }
 
     const dueDate = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-
     const { data, error } = await supabase
       .from("tasks")
       .insert({
         user_id: session.user.id,
-        title: "New Task",
-        description: "Click to edit...",
+        title: "New task",
+        description: "",
         priority: "medium",
         due_date: dueDate,
         completed: false,
@@ -84,24 +90,28 @@ export default function TasksPage() {
       .single();
 
     if (error) {
-      setDbError(`Insert failed: ${error.message} (code: ${error.code})`);
+      setDbError(`Couldn't create task: ${error.message}`);
     } else if (data) {
       const newTask = dbRowToTask(data);
       setTasks((prev) => [newTask, ...prev]);
       setSelectedTaskId(newTask.id);
       setIsEditing(true);
+      setShowDetailMobile(true);
     }
     setIsAdding(false);
   };
 
   const handleDeleteTask = async (id: string) => {
     if (!window.confirm("Delete this task? This cannot be undone.")) return;
-    await supabase.from("tasks").delete().eq("id", id);
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-    setSelectedTaskId((prev) => {
-      const remaining = tasks.filter((t) => t.id !== id);
-      return prev === id ? (remaining[0]?.id ?? null) : prev;
-    });
+    const { error } = await supabase.from("tasks").delete().eq("id", id);
+    if (error) { setDbError(`Couldn't delete: ${error.message}`); return; }
+    const remaining = tasks.filter((t) => t.id !== id);
+    setTasks(remaining);
+    if (selectedTaskId === id) {
+      setSelectedTaskId(remaining[0]?.id ?? null);
+      setShowDetailMobile(false);
+    }
+    setIsEditing(false);
   };
 
   const handleSaveTask = async (updated: Task) => {
@@ -117,9 +127,10 @@ export default function TasksPage() {
       .eq("id", updated.id);
 
     if (error) {
-      setDbError(`Save failed: ${error.message}`);
+      setDbError(`Couldn't save: ${error.message}`);
     } else {
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      setIsEditing(false);
     }
     setIsSaving(false);
   };
@@ -127,58 +138,38 @@ export default function TasksPage() {
   const handleToggleComplete = async (id: string) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
-
-    const { error } = await supabase
-      .from("tasks")
-      .update({ completed: !task.completed })
-      .eq("id", id);
-
-    if (!error) {
-      setTasks((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
-      );
+    // optimistic update, rolled back on failure
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+    const { error } = await supabase.from("tasks").update({ completed: !task.completed }).eq("id", id);
+    if (error) {
+      setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
+      setDbError(`Couldn't update: ${error.message}`);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-amber-50 dark:bg-zinc-950 rounded-2xl transition-colors duration-200">
-        <p className="text-[#231E1F]/50 dark:text-zinc-500 [font-family:var(--font-outfit)]">Loading…</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingState label="Loading tasks…" />;
 
   return (
-    <div className="w-full h-full flex flex-col bg-amber-50 dark:bg-zinc-950 rounded-2xl overflow-hidden transition-colors duration-200">
-      {dbError && (
-        <div className="bg-red-500 text-white text-sm px-6 py-2 [font-family:var(--font-outfit)]">
-          Supabase error: {dbError}
-        </div>
-      )}
-      <div className="px-6 py-4 border-b border-[#231E1F]/10 dark:border-zinc-800 flex items-center">
-        <div className="flex-1">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="flex items-center gap-2 text-[#231E1F] dark:text-zinc-300 hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
-          >
-            <ArrowLeft className="size-5" />
-            Back to Dashboard
-          </button>
-        </div>
-        <h1 className="text-3xl text-[#231E1F] dark:text-zinc-100 font-semibold [font-family:var(--font-outfit)]">
-          Tasks
-        </h1>
-        <div className="flex-1" />
-      </div>
-      <div className="flex-1 p-3 md:p-6 flex gap-4 overflow-hidden">
-        {/* List: full-width on mobile (hidden when task selected), 30% on desktop */}
-        <div className={`h-full w-full md:w-[30%] shrink-0 ${selectedTaskId ? "hidden md:block" : "block"}`}>
+    <div className="flex h-full flex-col">
+      <PageHeader
+        title="Tasks"
+        description={`${openCount} open · ${tasks.length - openCount} completed`}
+        actions={
+          <Btn variant="primary" onClick={handleAddTask} disabled={isAdding}>
+            <Plus /> {isAdding ? "Creating…" : "New task"}
+          </Btn>
+        }
+        className={cn(showDetailMobile && "max-md:hidden")}
+      />
+      {dbError && <ErrorBanner message={dbError} onClose={() => setDbError(null)} />}
+
+      <div className="flex min-h-0 flex-1">
+        <div className={cn("w-full shrink-0 border-line md:w-80 md:border-r", showDetailMobile && "max-md:hidden")}>
           <TasksList
             tasks={tasks}
             selectedTaskId={selectedTaskId}
-            onSelectTask={setSelectedTaskId}
+            onSelectTask={selectTask}
             onAddTask={handleAddTask}
-            isAdding={isAdding}
             onToggleComplete={handleToggleComplete}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -186,14 +177,14 @@ export default function TasksPage() {
             onFilterChange={setFilterPriority}
           />
         </div>
-        {/* Detail: full-width on mobile (hidden when no task), fills remaining space on desktop */}
-        <div className={`h-full flex-1 min-w-0 ${selectedTaskId ? "block" : "hidden md:block"}`}>
+        <div className={cn("min-w-0 flex-1", !showDetailMobile && "max-md:hidden")}>
           <TasksDetail
+            key={selectedTask?.id ?? "empty"}
             task={selectedTask}
             onDelete={handleDeleteTask}
-            onBack={() => setSelectedTaskId(null)}
+            onBack={() => setShowDetailMobile(false)}
             isEditing={isEditing}
-            onEditToggle={() => setIsEditing(!isEditing)}
+            onEditToggle={() => setIsEditing((e) => !e)}
             onToggleComplete={handleToggleComplete}
             onSave={handleSaveTask}
             isSaving={isSaving}

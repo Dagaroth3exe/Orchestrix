@@ -1,18 +1,13 @@
-import { Search, Plus } from "lucide-react";
-
-interface Note {
-  id: string;
-  title: string;
-  preview: string;
-  updatedAt: string;
-}
+import { BookOpen } from "lucide-react";
+import { Btn, EmptyState, SearchInput } from "@/app/components/kit";
+import type { Note } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface NotesListProps {
   notes: Note[];
   selectedNoteId: string | null;
   onSelectNote: (id: string) => void;
   onAddNote: () => void;
-  isAdding?: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
 }
@@ -22,71 +17,56 @@ export default function NotesList({
   selectedNoteId,
   onSelectNote,
   onAddNote,
-  isAdding = false,
   searchQuery,
   onSearchChange,
 }: NotesListProps) {
-  const filteredNotes = notes.filter(
-    (note) =>
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.preview.toLowerCase().includes(searchQuery.toLowerCase())
+  const q = searchQuery.toLowerCase();
+  const filtered = notes.filter(
+    (n) => n.title.toLowerCase().includes(q) || (n.preview ?? "").toLowerCase().includes(q)
   );
 
   return (
-    <div className="w-full h-full bg-[#231E1F] dark:bg-zinc-700 rounded-2xl p-4 flex flex-col transition-colors duration-200">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-white text-2xl font-semibold [font-family:var(--font-outfit)]">
-          Notes
-        </h2>
-        <button
-          onClick={onAddNote}
-          disabled={isAdding}
-          className="bg-amber-50/80 hover:bg-amber-50 text-[#231E1F] p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="Add new note"
-        >
-          {isAdding ? <span className="text-xs font-semibold px-1">...</span> : <Plus className="size-5" />}
-        </button>
+    <div className="flex h-full flex-col">
+      <div className="p-3">
+        <SearchInput value={searchQuery} onChange={onSearchChange} placeholder="Search notes" />
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4" />
-        <input
-          type="text"
-          placeholder="Search notes..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-[#2a2522] dark:bg-zinc-600 text-white placeholder-gray-500 rounded-lg border border-gray-700 dark:border-zinc-500 focus:border-amber-50/30 focus:outline-none [font-family:var(--font-outfit)]"
-        />
-      </div>
-
-      {/* Notes List */}
-      <div className="flex-1 overflow-y-auto space-y-2">
-        {filteredNotes.length === 0 ? (
-          <div className="text-gray-400 text-center py-8 text-sm">
-            No notes found
-          </div>
+      <div className="flex-1 overflow-y-auto px-2 pb-3">
+        {notes.length === 0 ? (
+          <EmptyState
+            icon={BookOpen}
+            title="No notes yet"
+            hint="Capture ideas, meeting notes and more."
+            action={<Btn variant="accent" size="sm" onClick={onAddNote}>Create a note</Btn>}
+          />
+        ) : filtered.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted">No notes match “{searchQuery}”.</p>
         ) : (
-          filteredNotes.map((note) => (
-            <button
-              key={note.id}
-              onClick={() => onSelectNote(note.id)}
-              className={`w-full text-left p-3 rounded-lg transition-all [font-family:var(--font-outfit)] ${
-                selectedNoteId === note.id
-                  ? "bg-amber-50/20 border-l-4 border-amber-50"
-                  : "hover:bg-[#2a2522] dark:hover:bg-zinc-600"
-              }`}
-            >
-              <h3 className="text-white font-semibold text-sm line-clamp-1">
-                {note.title}
-              </h3>
-              <p className="text-gray-400 text-xs line-clamp-1 mt-1">
-                {note.preview}
-              </p>
-              <p className="text-gray-500 text-xs mt-1">{note.updatedAt}</p>
-            </button>
-          ))
+          <ul className="space-y-0.5">
+            {filtered.map((note) => {
+              const active = selectedNoteId === note.id;
+              return (
+                <li key={note.id}>
+                  <button
+                    onClick={() => onSelectNote(note.id)}
+                    className={cn(
+                      "relative w-full rounded-xl px-3.5 py-3 text-left transition-colors",
+                      active ? "bg-accent-soft" : "hover:bg-surface-2"
+                    )}
+                  >
+                    {active && <span className="absolute top-3 bottom-3 left-0 w-0.5 rounded-full bg-accent" />}
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h3 className="truncate text-sm font-medium text-fg">{note.title || "Untitled"}</h3>
+                      <span className="shrink-0 text-[11px] text-subtle">{note.updatedAt}</span>
+                    </div>
+                    <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted">
+                      {note.preview || "No content yet"}
+                    </p>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
     </div>

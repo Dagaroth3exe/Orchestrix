@@ -1,14 +1,11 @@
-import { useState, useEffect } from "react";
-import { Trash2, ArrowLeft, Calendar } from "lucide-react";
+"use client";
 
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  priority: "high" | "medium" | "low";
-  dueDate: string;
-  completed: boolean;
-}
+import { useState } from "react";
+import { ArrowLeft, Calendar, Check, CheckCircle2, Circle, ListTodo, Pencil, Trash2 } from "lucide-react";
+import { Btn, EmptyState, PriorityChip, inputClass, priorityStyles } from "@/app/components/kit";
+import { daysUntil, formatDue } from "@/lib/format";
+import type { Priority, Task } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface TasksDetailProps {
   task: Task | null;
@@ -21,6 +18,9 @@ interface TasksDetailProps {
   isSaving?: boolean;
 }
 
+const PRIORITIES: Priority[] = ["high", "medium", "low"];
+
+/** Parent passes `key={task.id}` so local state re-initialises per task. */
 export default function TasksDetail({
   task,
   onDelete,
@@ -31,173 +31,151 @@ export default function TasksDetail({
   onSave,
   isSaving = false,
 }: TasksDetailProps) {
-  const [localTitle, setLocalTitle] = useState("");
-  const [localDescription, setLocalDescription] = useState("");
-  const [localPriority, setLocalPriority] = useState<"high" | "medium" | "low">("medium");
-  const [localDueDate, setLocalDueDate] = useState("");
-
-  useEffect(() => {
-    if (task) {
-      setLocalTitle(task.title);
-      setLocalDescription(task.description);
-      setLocalPriority(task.priority);
-      setLocalDueDate(task.dueDate);
-    }
-  }, [task?.id]);
-
-  const priorityColors = {
-    high: "bg-red-500 text-white",
-    medium: "bg-yellow-500 text-white",
-    low: "bg-green-500 text-white",
-  };
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [description, setDescription] = useState(task?.description ?? "");
+  const [priority, setPriority] = useState<Priority>(task?.priority ?? "medium");
+  const [dueDate, setDueDate] = useState(task?.dueDate ?? "");
 
   if (!task) {
-    return (
-      <div className="w-full bg-amber-50 dark:bg-zinc-950 rounded-2xl p-8 flex flex-col items-center justify-center h-full transition-colors duration-200">
-        <p className="text-[#231E1F]/50 dark:text-zinc-500 text-lg [font-family:var(--font-outfit)]">
-          Select a task to view details
-        </p>
-      </div>
-    );
+    return <EmptyState icon={ListTodo} title="Select a task" hint="Pick a task from the list, or add a new one." className="h-full" />;
   }
 
-  const handleDone = () => {
-    onSave({
-      ...task,
-      title: localTitle,
-      description: localDescription,
-      priority: localPriority,
-      dueDate: localDueDate,
-    });
-    onEditToggle();
+  const reset = () => {
+    setTitle(task.title);
+    setDescription(task.description);
+    setPriority(task.priority);
+    setDueDate(task.dueDate);
   };
 
+  const handleSave = () =>
+    onSave({ ...task, title: title.trim() || "Untitled task", description, priority, dueDate });
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); handleSave(); }
+    if (e.key === "Escape") { reset(); onEditToggle(); }
+  };
+
+  const overdue = !task.completed && (daysUntil(task.dueDate) ?? 1) < 0;
+
   return (
-    <div className="w-full md:w-full bg-amber-50 dark:bg-zinc-950 rounded-2xl p-4 md:p-8 flex flex-col h-full overflow-y-auto transition-colors duration-200">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6 pb-4 border-b border-[#231E1F]/10 dark:border-zinc-800">
-        <button
-          onClick={onBack}
-          className="md:hidden flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => onToggleComplete(task.id)}
-              className="text-3xl"
-            >
-              {task.completed ? "✓" : "○"}
-            </button>
-            {isEditing ? (
+    <div className="flex h-full flex-col" onKeyDown={isEditing ? onKeyDown : undefined}>
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 border-b border-line px-4 py-2.5 md:px-6">
+        <Btn variant="ghost" size="icon" onClick={onBack} className="md:hidden" aria-label="Back to tasks">
+          <ArrowLeft />
+        </Btn>
+        <p className="mr-auto truncate text-xs text-subtle">{task.completed ? "Completed" : formatDue(task.dueDate)}</p>
+        {!isEditing && (
+          <Btn variant={task.completed ? "soft" : "accent"} size="sm" onClick={() => onToggleComplete(task.id)}>
+            {task.completed ? <Circle /> : <CheckCircle2 />}
+            {task.completed ? "Reopen" : "Complete"}
+          </Btn>
+        )}
+        {isEditing ? (
+          <>
+            <Btn variant="ghost" size="sm" onClick={() => { reset(); onEditToggle(); }}>Cancel</Btn>
+            <Btn variant="primary" size="sm" onClick={handleSave} disabled={isSaving}>
+              <Check /> {isSaving ? "Saving…" : "Save"}
+            </Btn>
+          </>
+        ) : (
+          <Btn variant="soft" size="sm" onClick={onEditToggle}>
+            <Pencil /> Edit
+          </Btn>
+        )}
+        <Btn variant="danger" size="icon" onClick={() => onDelete(task.id)} aria-label="Delete task">
+          <Trash2 />
+        </Btn>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl px-5 py-6 md:px-10 md:py-10">
+          {isEditing ? (
+            <div className="space-y-6">
               <input
-                type="text"
-                value={localTitle}
-                onChange={(e) => setLocalTitle(e.target.value)}
-                className="text-4xl font-semibold [font-family:var(--font-outfit)] text-[#231E1F] bg-transparent border-b-2 border-[#231E1F]/30 focus:border-[#231E1F] focus:outline-none w-full"
-                placeholder="Task title..."
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Task title"
+                className="w-full bg-transparent font-display text-3xl font-bold tracking-[-0.03em] text-fg placeholder:text-subtle focus:outline-none md:text-4xl"
               />
-            ) : (
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-2 text-xs font-medium text-muted">Priority</p>
+                  <div className="flex gap-1 rounded-xl bg-surface-2 p-1">
+                    {PRIORITIES.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPriority(p)}
+                        className={cn(
+                          "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium capitalize transition-all",
+                          priority === p ? "bg-surface text-fg shadow-soft" : "text-muted hover:text-fg"
+                        )}
+                      >
+                        <span className={cn("size-1.5 rounded-full", priorityStyles[p].dot)} />
+                        {priorityStyles[p].label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-medium text-muted">Due date</span>
+                  <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={cn(inputClass, "h-10")} />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="mb-2 block text-xs font-medium text-muted">Description</span>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Add details, links or a checklist…"
+                  rows={8}
+                  className={cn(inputClass, "resize-none py-3 leading-6")}
+                />
+              </label>
+              <p className="text-[11px] text-subtle max-md:hidden">⌘/Ctrl + S to save · Esc to cancel</p>
+            </div>
+          ) : (
+            <>
               <h1
-                className={`text-4xl font-semibold [font-family:var(--font-outfit)] ${
-                  task.completed ? "text-[#231E1F]/50 dark:text-zinc-600 line-through" : "text-[#231E1F] dark:text-zinc-100"
-                }`}
+                className={cn(
+                  "font-display text-3xl font-bold tracking-[-0.03em] md:text-4xl",
+                  task.completed ? "text-subtle line-through decoration-2" : "text-fg"
+                )}
               >
                 {task.title}
               </h1>
-            )}
-          </div>
-
-          {/* Priority + Due Date */}
-          <div className="flex items-center gap-3 mt-3">
-            {isEditing ? (
-              <>
-                <select
-                  value={localPriority}
-                  onChange={(e) => setLocalPriority(e.target.value as "high" | "medium" | "low")}
-                  className="px-3 py-1 rounded-full text-sm font-semibold [font-family:var(--font-outfit)] bg-[#231E1F]/10 text-[#231E1F] focus:outline-none cursor-pointer"
-                >
-                  <option value="high">High Priority</option>
-                  <option value="medium">Medium Priority</option>
-                  <option value="low">Low Priority</option>
-                </select>
-                <div className="flex items-center gap-1 text-[#231E1F]/60 text-sm">
-                  <Calendar className="size-4" />
-                  <input
-                    type="date"
-                    value={localDueDate}
-                    onChange={(e) => setLocalDueDate(e.target.value)}
-                    className="bg-transparent text-[#231E1F] text-sm [font-family:var(--font-outfit)] focus:outline-none cursor-pointer"
-                  />
-                </div>
-              </>
-            ) : (
-              <>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <PriorityChip priority={task.priority} />
                 <span
-                  className={`px-3 py-1 rounded-full text-sm font-semibold [font-family:var(--font-outfit)] capitalize ${
-                    priorityColors[task.priority]
-                  }`}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                    overdue ? "bg-danger-soft text-danger" : "bg-surface-2 text-muted"
+                  )}
                 >
-                  {task.priority} Priority
+                  <Calendar className="size-3.5" />
+                  {formatDue(task.dueDate)}
                 </span>
-                <span className="flex items-center gap-1 text-[#231E1F]/60 text-sm [font-family:var(--font-outfit)]">
-                  <Calendar className="size-4" />
-                  {task.dueDate}
-                </span>
-              </>
-            )}
-          </div>
+                {task.completed && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-0.5 text-xs font-medium text-success">
+                    <Check className="size-3.5" /> Completed
+                  </span>
+                )}
+              </div>
+              <div className="mt-8 border-t border-line pt-6">
+                {task.description ? (
+                  <p className="text-[15px] leading-7 whitespace-pre-wrap text-fg/85">{task.description}</p>
+                ) : (
+                  <button onClick={onEditToggle} className="text-sm text-subtle hover:text-accent">
+                    + Add a description
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={isEditing ? handleDone : onEditToggle}
-            disabled={isSaving}
-            className="px-4 py-2 bg-[#231E1F] text-amber-50 rounded-lg hover:bg-[#231E1F]/90 transition-colors font-semibold text-sm [font-family:var(--font-outfit)] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSaving ? "Saving…" : isEditing ? "Save" : "Edit"}
-          </button>
-          <button
-            onClick={() => onDelete(task.id)}
-            className="px-4 py-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-colors [font-family:var(--font-outfit)]"
-          >
-            <Trash2 className="size-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Description */}
-      <div className="flex-1">
-        {isEditing ? (
-          <div className="space-y-4">
-            <label className="block text-[#231E1F] font-semibold mb-2 [font-family:var(--font-outfit)]">
-              Description
-            </label>
-            <textarea
-              value={localDescription}
-              onChange={(e) => setLocalDescription(e.target.value)}
-              className="w-full h-48 p-4 bg-white dark:bg-zinc-800 border border-[#231E1F]/20 dark:border-zinc-600 rounded-lg text-[#231E1F] dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#231E1F] dark:focus:ring-zinc-500 [font-family:var(--font-outfit)] resize-none"
-              placeholder="Add task details..."
-            />
-          </div>
-        ) : (
-          <div className="prose prose-sm max-w-none [font-family:var(--font-outfit)]">
-            <p className="text-[#231E1F] dark:text-zinc-300 text-base leading-relaxed whitespace-pre-wrap">
-              {task.description}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="mt-6 pt-4 border-t border-[#231E1F]/10 dark:border-zinc-800">
-        <p className="text-[#231E1F]/60 dark:text-zinc-500 text-sm [font-family:var(--font-outfit)]">
-          Status:{" "}
-          <span className="font-semibold text-[#231E1F] dark:text-zinc-300">
-            {task.completed ? "Completed ✓" : "Pending"}
-          </span>
-        </p>
       </div>
     </div>
   );

@@ -1,282 +1,297 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Play, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { Btn, PageHeader } from "@/app/components/kit";
+import { cn } from "@/lib/utils";
+
+const PRESETS = [5, 15, 25, 45, 60];
+const R = 140;
+const C = 2 * Math.PI * R;
+
+function chime() {
+  const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  const ac = new Ctx();
+  // two soft bell partials
+  [528, 792].forEach((freq, i) => {
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    const t = ac.currentTime + i * 0.12;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+    osc.start(t);
+    osc.stop(t + 2.3);
+  });
+}
+
+const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
 export default function FocusPage() {
-  const router = useRouter();
-  const [sessionDuration, setSessionDuration] = useState(25);
-  const [breakDuration, setBreakDuration] = useState(5);
-  const [timeLeft, setTimeLeft] = useState(sessionDuration * 60);
-  const [isRunning, setIsRunning] = useState(false);
+  const [sessionMin, setSessionMin] = useState(25);
+  const [breakMin, setBreakMin] = useState(5);
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
+  const [running, setRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
-  const [sessionsCompleted, setSessionsCompleted] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const prevSessionDurationRef = useRef(sessionDuration);
+  const [completed, setCompleted] = useState(0);
+  const [sound, setSound] = useState(true);
 
+  // tick
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    if (!running) return;
+    const id = setInterval(() => setTimeLeft((t) => Math.max(0, t - 1)), 1000);
+    return () => clearInterval(id);
+  }, [running]);
 
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && isRunning) {
-      // Session/break ended
+  // phase change when the clock hits zero
+  useEffect(() => {
+    if (!running || timeLeft > 0) return;
+    const t = setTimeout(() => {
+      if (sound) chime();
       if (!isBreak) {
-        setSessionsCompleted((prev) => prev + 1);
+        setCompleted((c) => c + 1);
         setIsBreak(true);
-        setTimeLeft(breakDuration * 60);
+        setTimeLeft(breakMin * 60);
       } else {
         setIsBreak(false);
-        setTimeLeft(sessionDuration * 60);
+        setTimeLeft(sessionMin * 60);
       }
-      if (soundEnabled) {
-        playNotificationSound();
-      }
-    }
+    }, 0);
+    return () => clearTimeout(t);
+  }, [running, timeLeft, isBreak, sessionMin, breakMin, sound]);
 
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft, isBreak, sessionDuration, breakDuration, soundEnabled]);
-
-  // Only update timeLeft when duration actually changes, not when pausing
+  // show the clock in the tab title while running
   useEffect(() => {
-    if (prevSessionDurationRef.current !== sessionDuration && !isRunning) {
-      setTimeLeft(sessionDuration * 60);
-    }
-    prevSessionDurationRef.current = sessionDuration;
-  }, [sessionDuration]);
+    const original = document.title;
+    if (running) document.title = `${fmt(timeLeft)} · ${isBreak ? "Rest" : "Focus"} — Orchestrix`;
+    return () => { document.title = original; };
+  }, [running, timeLeft, isBreak]);
 
-  const playNotificationSound = () => {
-    // Simple beep sound
-    const audioContext = new (window.AudioContext ||
-      (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+  const total = (isBreak ? breakMin : sessionMin) * 60;
+  const progress = total ? (total - timeLeft) / total : 0;
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = 1000;
-    oscillator.type = "sine";
-
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(
-      0.01,
-      audioContext.currentTime + 0.5
-    );
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.5);
+  const setSession = (m: number) => {
+    setSessionMin(m);
+    if (!running && !isBreak) setTimeLeft(m * 60);
   };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  const setBreak = (m: number) => {
+    setBreakMin(m);
+    if (!running && isBreak) setTimeLeft(m * 60);
   };
-
-  const handleReset = () => {
-    setIsRunning(false);
+  const reset = () => {
+    setRunning(false);
     setIsBreak(false);
-    setTimeLeft(sessionDuration * 60);
+    setTimeLeft(sessionMin * 60);
   };
-
-  const progressPercentage =
-    ((isBreak ? breakDuration * 60 : sessionDuration * 60) - timeLeft) /
-    (isBreak ? breakDuration * 60 : sessionDuration * 60);
 
   return (
-    <div className="w-full h-full flex flex-col bg-amber-50 dark:bg-zinc-950 rounded-2xl overflow-hidden transition-colors duration-200">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-[#231E1F]/10 dark:border-zinc-800">
-        <button
-          onClick={() => router.push("/dashboard")}
-          className="flex items-center gap-2 text-[#231E1F] dark:text-zinc-300 hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold mb-4"
-        >
-          <ArrowLeft className="size-5" />
-          Back to Dashboard
-        </button>
-        <h1 className="text-3xl text-[#231E1F] dark:text-zinc-100 font-semibold [font-family:var(--font-outfit)]">
-          Focus Timer
-        </h1>
-        <p className="text-[#231E1F]/60 dark:text-zinc-400 text-sm mt-2">
-          {isBreak ? "Break Time" : "Focus Session"} • {sessionsCompleted}{" "}
-          session{sessionsCompleted !== 1 ? "s" : ""} completed
-        </p>
-      </div>
+    <div className="flex h-full flex-col overflow-y-auto">
+      <PageHeader
+        title="Focus"
+        description={`${isBreak ? "Break" : `Session ${completed + 1}`} · ${completed} completed today`}
+      />
 
-      {/* Main Timer - two column layout */}
-      <div className="flex-1 overflow-y-auto lg:overflow-hidden p-4 md:p-8">
-        <div className="flex flex-col lg:flex-row gap-8 lg:h-full max-w-4xl mx-auto">
-
-          {/* Left column: Timer + Controls — always fully visible */}
-          <div className="flex flex-col items-center justify-center gap-6 flex-1">
-            {/* Status Indicator */}
-            <div className="text-center">
-              <p className="text-2xl text-[#231E1F]/60 dark:text-zinc-400 font-semibold [font-family:var(--font-outfit)] mb-1">
-                {isBreak ? "🎉 Break Time" : "🎯 Stay Focused"}
+      <div className="grid flex-1 gap-4 p-5 md:p-8 lg:grid-cols-2">
+        {/* Timer */}
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-line bg-surface-2/40 p-6 md:p-8">
+          <div className="relative grid aspect-square w-full max-w-[22rem] place-items-center">
+            {/* soft aura that breathes with the music */}
+            <div
+              className={cn(
+                "absolute inset-[14%] rounded-full blur-2xl transition-colors duration-700",
+                isBreak ? "bg-mint/40" : "bg-accent/20",
+                running ? "animate-breathe" : "opacity-40"
+              )}
+            />
+            {/* tick marks: 60 beats around the dial */}
+            <svg viewBox="0 0 300 300" className="absolute inset-0 size-full" aria-hidden>
+              {Array.from({ length: 60 }).map((_, i) => {
+                const a = (i / 60) * Math.PI * 2;
+                const long = i % 5 === 0;
+                const r1 = long ? 118 : 122;
+                return (
+                  <line
+                    key={i}
+                    x1={150 + Math.sin(a) * r1}
+                    y1={150 - Math.cos(a) * r1}
+                    x2={150 + Math.sin(a) * 127}
+                    y2={150 - Math.cos(a) * 127}
+                    stroke={i === (60 - (timeLeft % 60)) % 60 && running ? "var(--accent)" : "var(--line-strong)"}
+                    strokeWidth={long ? 2 : 1}
+                    strokeLinecap="round"
+                  />
+                );
+              })}
+            </svg>
+            <svg viewBox="0 0 300 300" className="absolute inset-0 size-full -rotate-90">
+              <circle cx="150" cy="150" r={R} fill="none" stroke="var(--line-strong)" strokeWidth="2" />
+              <motion.circle
+                cx="150"
+                cy="150"
+                r={R}
+                fill="none"
+                stroke={isBreak ? "var(--mint)" : "var(--accent)"}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={C}
+                animate={{ strokeDashoffset: C * (1 - progress) }}
+                transition={{ duration: 1, ease: "linear" }}
+              />
+            </svg>
+            <div className="relative flex flex-col items-center text-center">
+              <Metronome running={running} rest={isBreak} />
+              <p className="font-display text-[clamp(3.2rem,11vw,5rem)] leading-none font-bold tracking-[-0.04em] text-fg tabular-nums">
+                {fmt(timeLeft)}
               </p>
-              <p className="text-sm text-[#231E1F]/50 dark:text-zinc-500 [font-family:var(--font-outfit)]">
-                {sessionsCompleted} session{sessionsCompleted !== 1 ? "s" : ""} completed today
-              </p>
-            </div>
-
-            {/* Timer Display Circle */}
-            <div className="relative w-64 h-64 flex items-center justify-center shrink-0">
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 200">
-                <circle
-                  cx="100"
-                  cy="100"
-                  r="90"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  opacity="0.1"
-                  className="text-[#231E1F] dark:text-zinc-500"
-                />
-                <circle
-                  cx="100"
-                  cy="100"
-                  r="90"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  strokeDasharray={`${progressPercentage * 565.48} 565.48`}
-                  className="text-[#231E1F] dark:text-zinc-300"
-                  strokeLinecap="round"
-                  transform="rotate(-90 100 100)"
-                  style={{ transition: "stroke-dasharray 1s linear" }}
-                />
-              </svg>
-              <div className="text-center z-10">
-                <div className="text-6xl font-bold text-[#231E1F] dark:text-zinc-100 [font-family:var(--font-outfit)] tabular-nums">
-                  {formatTime(timeLeft)}
-                </div>
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center gap-4 justify-center">
-              <button
-                onClick={() => setIsRunning(!isRunning)}
-                className="flex items-center gap-2 px-8 py-4 bg-[#231E1F] text-amber-50 rounded-2xl hover:bg-[#231E1F]/90 transition-colors font-semibold [font-family:var(--font-outfit)] text-lg"
-              >
-                {isRunning ? (
-                  <>
-                    <Pause className="size-6" />
-                    Pause
-                  </>
-                ) : (
-                  <>
-                    <Play className="size-6" />
-                    Start
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleReset}
-                className="p-4 bg-[#231E1F]/10 text-[#231E1F] rounded-2xl hover:bg-[#231E1F]/20 transition-colors"
-                title="Reset"
-              >
-                <RotateCcw className="size-6" />
-              </button>
-              <button
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                className="p-4 bg-[#231E1F]/10 text-[#231E1F] rounded-2xl hover:bg-[#231E1F]/20 transition-colors"
-                title={soundEnabled ? "Mute" : "Unmute"}
-              >
-                {soundEnabled ? (
-                  <Volume2 className="size-6" />
-                ) : (
-                  <VolumeX className="size-6" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Right column: Settings — can scroll if needed */}
-          <div className="flex flex-col gap-4 w-full lg:w-72 py-1">
-            {/* Quick Presets */}
-            <div className="bg-[#231E1F] dark:bg-zinc-700 rounded-2xl p-6 transition-colors duration-200">
-              <h3 className="text-sm font-semibold text-amber-50 mb-3 [font-family:var(--font-outfit)]">
-                Quick Presets
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {[5, 10, 15, 25, 30, 45].map((minutes) => (
-                  <button
-                    key={minutes}
-                    onClick={() => {
-                      setSessionDuration(minutes);
-                      if (!isRunning) setTimeLeft(minutes * 60);
-                    }}
-                    disabled={isRunning}
-                    className={`px-4 py-2 text-sm font-semibold rounded-2xl transition-colors [font-family:var(--font-outfit)] ${
-                      sessionDuration === minutes
-                        ? "bg-amber-400 text-[#231E1F]"
-                        : "bg-amber-50/10 text-amber-50 hover:bg-amber-50/20"
-                    } ${isRunning ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              <div className="mt-3 h-4">
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={running ? "playing" : "idle"}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.5 }}
+                    className="font-mono text-[11px] uppercase tracking-[0.2em] text-subtle"
                   >
-                    {minutes}m
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Custom Duration Settings */}
-            <div className="bg-[#231E1F] dark:bg-zinc-700 rounded-2xl p-6 transition-colors duration-200">
-              <h2 className="text-lg font-semibold text-amber-50 mb-6 [font-family:var(--font-outfit)]">
-                Custom Duration
-              </h2>
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="text-sm font-semibold text-amber-50 [font-family:var(--font-outfit)]">
-                      Focus Time: {sessionDuration}m
-                    </label>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="60"
-                    value={sessionDuration}
-                    onChange={(e) => {
-                      const newDuration = parseInt(e.target.value);
-                      setSessionDuration(newDuration);
-                      if (!isRunning) {
-                        setTimeLeft(newDuration * 60);
-                      }
-                    }}
-                    className="w-full h-2 bg-amber-50/20 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                    disabled={isRunning}
-                  />
-                  <div className="text-xs text-amber-50/40 mt-1">(1-60 minutes)</div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="text-sm font-semibold text-amber-50 [font-family:var(--font-outfit)]">
-                      Break Time: {breakDuration}m
-                    </label>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="15"
-                    value={breakDuration}
-                    onChange={(e) => setBreakDuration(parseInt(e.target.value))}
-                    className="w-full h-2 bg-amber-50/20 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                    disabled={isRunning}
-                  />
-                  <div className="text-xs text-amber-50/40 mt-1">(1-15 minutes)</div>
-                </div>
+                    {running ? (isBreak ? "on a break" : "focusing") : isBreak ? "break ready" : "ready"}
+                  </motion.p>
+                </AnimatePresence>
               </div>
             </div>
           </div>
 
+          <div className="mt-8 flex items-center gap-3">
+            <Btn variant="ghost" size="icon" onClick={reset} aria-label="Reset" className="border border-line">
+              <RotateCcw />
+            </Btn>
+            <Btn variant={running ? "primary" : "accent"} onClick={() => setRunning((r) => !r)} className="h-12 min-w-36 px-6 text-base">
+              {running ? <Pause /> : <Play />}
+              {running ? "Pause" : timeLeft < total ? "Resume" : "Start"}
+            </Btn>
+            <Btn
+              variant="ghost"
+              size="icon"
+              onClick={() => setSound((s) => !s)}
+              aria-label={sound ? "Mute chime" : "Unmute chime"}
+              className="border border-line"
+            >
+              {sound ? <Volume2 /> : <VolumeX />}
+            </Btn>
+          </div>
+        </div>
+
+        {/* Settings */}
+        <div className="flex flex-col gap-4">
+          <div className="rounded-2xl border border-line bg-surface-2/40 p-5">
+            <p className="text-[15px] font-semibold text-fg">Session length</p>
+            <div className="mt-4 grid grid-cols-5 gap-2">
+              {PRESETS.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setSession(m)}
+                  disabled={running}
+                  className={cn(
+                    "h-10 rounded-xl text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                    sessionMin === m ? "bg-fg text-bg" : "bg-surface text-muted hover:text-fg"
+                  )}
+                >
+                  {m}m
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-6 rounded-2xl border border-line bg-surface-2/40 p-5">
+            <Slider label="Focus" value={sessionMin} min={1} max={90} onChange={setSession} disabled={running} />
+            <Slider label="Break" value={breakMin} min={1} max={30} onChange={setBreak} disabled={running} />
+          </div>
+
+          {/* Today — fills the remaining height so both columns end together */}
+          <div className="flex flex-1 flex-col rounded-2xl border border-line bg-surface-2/40 p-5">
+            <p className="text-[15px] font-semibold text-fg">Today</p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-surface p-4">
+                <p className="font-display text-3xl font-bold tracking-[-0.03em] text-fg tabular-nums">{completed}</p>
+                <p className="text-xs text-muted">sessions completed</p>
+              </div>
+              <div className="rounded-xl bg-surface p-4">
+                <p className="font-display text-3xl font-bold tracking-[-0.03em] text-fg tabular-nums">{completed * sessionMin}</p>
+                <p className="text-xs text-muted">minutes focused</p>
+              </div>
+            </div>
+            <div className="mt-auto flex items-center gap-1.5 pt-5" aria-label={`${completed} sessions completed`}>
+              {Array.from({ length: Math.max(8, completed + 1) }).map((_, i) => (
+                <span key={i} className={cn("h-1.5 flex-1 rounded-full transition-colors duration-500", i < completed ? "bg-accent" : "bg-line-strong")} />
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-butter p-5 text-butter-fg">
+            <p className="text-sm font-semibold">Tip</p>
+            <p className="mt-1 text-sm leading-relaxed">
+              Close distracting tabs and write down the one task you&apos;ll work on before you start.
+            </p>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+/** A little metronome whose arm ticks once per second while the timer runs. */
+function Metronome({ running, rest }: { running: boolean; rest: boolean }) {
+  return (
+    <svg viewBox="0 0 60 56" className="mb-3 h-12 w-auto" aria-hidden>
+      <path d="M18 52 L26 6 Q30 2 34 6 L42 52 Z" fill="none" stroke="var(--line-strong)" strokeWidth="2" strokeLinejoin="round" />
+      <line x1="14" x2="46" y1="52" y2="52" stroke="var(--line-strong)" strokeWidth="2" strokeLinecap="round" />
+      <motion.g
+        style={{ originX: 0.5, originY: 1 }}
+        animate={running ? { rotate: [-26, 26] } : { rotate: 0 }}
+        transition={running ? { duration: 1, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" } : { duration: 0.4 }}
+      >
+        <line x1="30" x2="30" y1="46" y2="8" stroke={rest ? "var(--mint)" : "var(--accent)"} strokeWidth="2.2" strokeLinecap="round" />
+        <rect x="26.5" y="18" width="7" height="6" rx="1.5" fill={rest ? "var(--mint)" : "var(--accent)"} />
+      </motion.g>
+      <circle cx="30" cy="46" r="2.4" fill="var(--fg)" />
+    </svg>
+  );
+}
+
+function Slider({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="block">
+      <div className="mb-3 flex items-baseline justify-between">
+        <span className="text-sm font-medium text-fg">{label}</span>
+        <span className="text-sm text-muted tabular-nums">{value} min</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(parseInt(e.target.value))}
+        className="w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+      />
+    </label>
   );
 }

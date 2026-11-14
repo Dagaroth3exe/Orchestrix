@@ -1,9 +1,5 @@
-"use client";
-
-import IntroPage from "./Pages/IntroPages";
+import Landing from "./components/Landing";
 
 export default function Home() {
-  return (
-    <IntroPage />
-  );
+  return <Landing />;
 }

@@ -1,16 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Trash2, ArrowLeft, Sparkles, X } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-
-interface Note {
-  id: string;
-  title: string;
-  preview: string;
-  content?: string;
-  updatedAt: string;
-}
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft, BookOpen, Check, Pencil, Sparkles, Trash2, X } from "lucide-react";
+import { Btn, EmptyState } from "@/app/components/kit";
+import { isPreview, supabase } from "@/lib/supabase";
+import type { Note } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface NotesDetailProps {
   note: Note | null;
@@ -30,12 +26,34 @@ interface Analysis {
   actionItems: string[];
 }
 
+const STOP = new Set("the a an and or but to of in on for with at by from is are was were be been it this that i my me we our you your as so if not no do have has had will just about into than then them they there their what when which who".split(" "));
+
+/** Preview-mode stand-in for the AI endpoint: a simple local heuristic. */
+function localAnalysis(title: string, content: string): Analysis {
+  const text = `${title}. ${content}`.trim();
+  const sentences = content.split(/(?<=[.!?])\s+|\n+/).map((s) => s.replace(/^[-*•]\s*/, "").trim()).filter(Boolean);
+  const words = text.toLowerCase().match(/[a-z][a-z'-]{3,}/g) ?? [];
+  const freq = new Map<string, number>();
+  words.forEach((w) => !STOP.has(w) && freq.set(w, (freq.get(w) ?? 0) + 1));
+  const tags = [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([w]) => w);
+  const pos = (text.match(/\b(good|great|well|love|happy|win|nice|calm|done)\b/gi) ?? []).length;
+  const neg = (text.match(/\b(bad|stuck|late|worried|problem|miss|tired|blocked)\b/gi) ?? []).length;
+  return {
+    summary: sentences[0] ?? (title || "This note is empty."),
+    keyPoints: sentences.slice(1, 4),
+    tags,
+    sentiment: pos > neg ? "positive" : neg > pos ? "negative" : "neutral",
+    actionItems: sentences.filter((s) => /^(call|book|send|write|try|schedule|reply|finish|ship|fix|review)\b/i.test(s)).slice(0, 3),
+  };
+}
+
 const SENTIMENT_STYLES: Record<string, string> = {
-  positive: "bg-green-100 text-green-700",
-  neutral: "bg-amber-100 text-amber-700",
-  negative: "bg-red-100 text-red-700",
+  positive: "bg-success-soft text-success",
+  neutral: "bg-surface-3 text-muted",
+  negative: "bg-danger-soft text-danger",
 };
 
+/** Parent passes `key={note.id}` so local state re-initialises per note. */
 export default function NotesDetail({
   note,
   onDelete,
@@ -45,45 +63,36 @@ export default function NotesDetail({
   onSave,
   isSaving = false,
 }: NotesDetailProps) {
-  const [localTitle, setLocalTitle] = useState("");
-  const [localContent, setLocalContent] = useState("");
+  const [localTitle, setLocalTitle] = useState(note?.title ?? "");
+  const [localContent, setLocalContent] = useState(note?.content || note?.preview || "");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (note) {
-      setLocalTitle(note.title);
-      setLocalContent(note.content || note.preview || "");
-      setAnalysis(null);
-      setAnalyzeError(null);
-    }
-  }, [note?.id]);
+  if (!note) {
+    return <EmptyState icon={BookOpen} title="Select a note" hint="Pick a note from the list, or create a new one." className="h-full" />;
+  }
 
   const handleAnalyze = async () => {
-    if (!note) return;
     setAnalyzing(true);
     setAnalyzeError(null);
-
     try {
+      if (isPreview) {
+        await new Promise((r) => setTimeout(r, 700));
+        setAnalysis(localAnalysis(isEditing ? localTitle : note.title, isEditing ? localContent : note.content || note.preview || ""));
+        return;
+      }
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setAnalyzeError("Not authenticated"); return; }
 
       const res = await fetch("/api/analyze-note", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ title: note.title, content: note.content }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ title: note.title, content: isEditing ? localContent : note.content }),
       });
-
       const json = await res.json();
-      if (!res.ok) {
-        setAnalyzeError(json.error || "Analysis failed");
-      } else {
-        setAnalysis(json.analysis);
-      }
+      if (!res.ok) setAnalyzeError(json.error || "Analysis failed");
+      else setAnalysis(json.analysis);
     } catch (err) {
       setAnalyzeError(err instanceof Error ? err.message : "Network error");
     } finally {
@@ -91,135 +100,138 @@ export default function NotesDetail({
     }
   };
 
-  if (!note) {
-    return (
-      <div className="w-[70%] bg-amber-50 dark:bg-zinc-950 rounded-2xl p-8 flex flex-col items-center justify-center h-full transition-colors duration-200">
-        <p className="text-[#231E1F]/50 text-lg [font-family:var(--font-outfit)]">
-          Select a note to view details
-        </p>
-      </div>
-    );
-  }
+  const handleSave = () => onSave({ ...note, title: localTitle.trim() || "Untitled", content: localContent });
 
-  const handleSave = () => {
-    onSave({
-      ...note,
-      title: localTitle || "Untitled",
-      content: localContent,
-    });
-    onEditToggle();
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); handleSave(); }
+    if (e.key === "Escape") {
+      setLocalTitle(note.title);
+      setLocalContent(note.content || note.preview || "");
+      onEditToggle();
+    }
   };
 
+  const words = (isEditing ? localContent : note.content || "").trim().split(/\s+/).filter(Boolean).length;
+
   return (
-    <div className="w-full bg-amber-50 dark:bg-zinc-950 rounded-2xl p-4 md:p-8 flex flex-col h-full overflow-y-auto transition-colors duration-200">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#231E1F]/10 dark:border-zinc-800">
-        <button
-          onClick={onBack}
-          className="md:hidden flex items-center gap-2 text-[#231E1F] hover:opacity-70 transition-opacity"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <div className="flex-1">
-          {isEditing ? (
-            <input
-              type="text"
-              value={localTitle}
-              onChange={(e) => setLocalTitle(e.target.value)}
-              className="text-4xl text-[#231E1F] dark:text-zinc-100 font-semibold [font-family:var(--font-outfit)] bg-transparent border-b-2 border-[#231E1F] dark:border-zinc-500 w-full focus:outline-none focus:border-[#231E1F]/60"
-              placeholder="Note title..."
-            />
-          ) : (
-            <h1 className="text-4xl text-[#231E1F] dark:text-zinc-100 font-semibold [font-family:var(--font-outfit)]">
-              {note.title}
-            </h1>
-          )}
-          <p className="text-[#231E1F]/50 dark:text-zinc-500 text-sm mt-2">Updated {note.updatedAt}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleAnalyze}
-            disabled={analyzing}
-            className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold text-sm [font-family:var(--font-outfit)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-          >
-            <Sparkles className="size-4" />
-            {analyzing ? "Analyzing…" : "Analyze"}
-          </button>
-          <button
-            onClick={isEditing ? handleSave : onEditToggle}
-            disabled={isSaving}
-            className="px-4 py-2 bg-[#231E1F] text-amber-50 rounded-lg hover:bg-[#231E1F]/90 transition-colors font-semibold text-sm [font-family:var(--font-outfit)] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSaving ? "Saving…" : isEditing ? "Save" : "Edit"}
-          </button>
-          <button
-            onClick={() => onDelete(note.id)}
-            className="px-4 py-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-colors [font-family:var(--font-outfit)]"
-          >
-            <Trash2 className="size-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1">
+    <div className="flex h-full flex-col" onKeyDown={isEditing ? onKeyDown : undefined}>
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 border-b border-line px-4 py-2.5 md:px-6">
+        <Btn variant="ghost" size="icon" onClick={onBack} className="md:hidden" aria-label="Back to notes">
+          <ArrowLeft />
+        </Btn>
+        <p className="mr-auto truncate text-xs text-subtle">
+          Updated {note.updatedAt} · {words} word{words === 1 ? "" : "s"}
+        </p>
+        <Btn variant="soft" size="sm" onClick={handleAnalyze} disabled={analyzing}>
+          <Sparkles className={cn(analyzing && "animate-pulse text-accent")} />
+          <span className="max-sm:hidden">{analyzing ? "Analyzing…" : "Analyze"}</span>
+        </Btn>
         {isEditing ? (
-          <textarea
-            value={localContent}
-            onChange={(e) => setLocalContent(e.target.value)}
-            className="w-full h-full p-4 bg-white dark:bg-zinc-800 border border-[#231E1F]/20 dark:border-zinc-600 rounded-lg text-[#231E1F] dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#231E1F] dark:focus:ring-zinc-500 [font-family:var(--font-outfit)] resize-none"
-            placeholder="Start typing..."
-          />
+          <Btn variant="accent" size="sm" onClick={handleSave} disabled={isSaving}>
+            <Check /> {isSaving ? "Saving…" : "Save"}
+          </Btn>
         ) : (
-          <div className="prose prose-sm max-w-none [font-family:var(--font-outfit)]">
-            <p className="text-[#231E1F] dark:text-zinc-300 text-base leading-relaxed whitespace-pre-wrap">
-              {note.content || note.preview}
-            </p>
-          </div>
+          <Btn variant="soft" size="sm" onClick={onEditToggle}>
+            <Pencil /> Edit
+          </Btn>
         )}
+        <Btn variant="danger" size="icon" onClick={() => onDelete(note.id)} aria-label="Delete note">
+          <Trash2 />
+        </Btn>
       </div>
 
-      {/* Analysis results */}
-      {analyzeError && (
-        <p className="mt-4 text-red-500 text-xs [font-family:var(--font-outfit)]">{analyzeError}</p>
-      )}
-      {analysis && (
-        <div className="mt-6 border-t border-[#231E1F]/10 dark:border-zinc-800 pt-4 space-y-3 [font-family:var(--font-outfit)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-[#231E1F]/50 dark:text-zinc-500 uppercase tracking-wide font-semibold">AI Analysis</span>
-            <button onClick={() => setAnalysis(null)} className="text-[#231E1F]/40 hover:text-[#231E1F] transition-colors">
-              <X className="size-4" />
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto flex h-full max-w-3xl flex-col px-5 py-6 md:px-10 md:py-10">
+          {isEditing ? (
+            <>
+              <input
+                autoFocus
+                value={localTitle}
+                onChange={(e) => setLocalTitle(e.target.value)}
+                placeholder="Untitled"
+                className="w-full bg-transparent font-display text-3xl font-bold tracking-[-0.03em] text-fg placeholder:text-subtle focus:outline-none md:text-4xl"
+              />
+              <textarea
+                value={localContent}
+                onChange={(e) => setLocalContent(e.target.value)}
+                placeholder="Start writing…"
+                className="mt-4 min-h-64 w-full flex-1 resize-none bg-transparent text-[15px] leading-7 text-fg placeholder:text-subtle focus:outline-none"
+              />
+              <p className="mt-2 text-[11px] text-subtle max-md:hidden">⌘/Ctrl + S to save · Esc to cancel</p>
+            </>
+          ) : (
+            <button onDoubleClick={onEditToggle} className="cursor-text text-left" title="Double-click to edit">
+              <h1 className="font-display text-3xl font-bold tracking-[-0.03em] text-fg md:text-4xl">{note.title}</h1>
+              <p className="mt-4 text-[15px] leading-7 whitespace-pre-wrap text-fg/85">
+                {note.content || note.preview || <span className="text-subtle">This note is empty. Double-click to start writing.</span>}
+              </p>
             </button>
-          </div>
-          <p className="text-sm text-[#231E1F] dark:text-zinc-300 leading-relaxed">{analysis.summary}</p>
-          {analysis.keyPoints.length > 0 && (
-            <ul className="space-y-1">
-              {analysis.keyPoints.map((pt, i) => (
-                <li key={i} className="text-sm text-[#231E1F] flex gap-2">
-                  <span className="text-amber-500 shrink-0">•</span>{pt}
-                </li>
-              ))}
-            </ul>
           )}
-          <div className="flex flex-wrap gap-2">
-            <span className={`text-xs px-2 py-1 rounded-full font-semibold ${SENTIMENT_STYLES[analysis.sentiment] ?? SENTIMENT_STYLES.neutral}`}>
-              {analysis.sentiment}
-            </span>
-            {analysis.tags.map((tag) => (
-              <span key={tag} className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800">#{tag}</span>
-            ))}
-          </div>
-          {analysis.actionItems.length > 0 && (
-            <ul className="space-y-1">
-              {analysis.actionItems.map((item, i) => (
-                <li key={i} className="text-sm text-[#231E1F] flex gap-2">
-                  <span className="text-blue-500 shrink-0">→</span>{item}
-                </li>
-              ))}
-            </ul>
+
+          {analyzeError && (
+            <p className="mt-6 rounded-xl bg-danger-soft px-4 py-2.5 text-sm text-danger">{analyzeError}</p>
           )}
+
+          <AnimatePresence>
+            {analysis && (
+              <motion.section
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="mt-8 rounded-2xl border border-accent/25 bg-accent-soft p-5"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+                    <Sparkles className="size-3.5" /> AI analysis
+                  </span>
+                  <button onClick={() => setAnalysis(null)} className="text-subtle hover:text-fg" aria-label="Close analysis">
+                    <X className="size-4" />
+                  </button>
+                </div>
+                <p className="text-sm leading-relaxed text-fg">{analysis.summary}</p>
+
+                {analysis.keyPoints.length > 0 && (
+                  <ul className="mt-4 space-y-1.5">
+                    {analysis.keyPoints.map((pt, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-fg/85">
+                        <span className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
+                        {pt}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {analysis.actionItems.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-1.5 text-xs font-semibold text-muted">Action items</p>
+                    <ul className="space-y-1.5">
+                      {analysis.actionItems.map((item, i) => (
+                        <li key={i} className="flex gap-2 text-sm text-fg/85">
+                          <Check className="mt-0.5 size-4 shrink-0 text-accent" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium capitalize", SENTIMENT_STYLES[analysis.sentiment] ?? SENTIMENT_STYLES.neutral)}>
+                    {analysis.sentiment}
+                  </span>
+                  {analysis.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-surface px-2.5 py-0.5 text-xs text-muted">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </motion.section>
+            )}
+          </AnimatePresence>
         </div>
-      )}
+      </div>
     </div>
   );
 }

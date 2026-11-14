@@ -1,45 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bell, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AlertTriangle, Bell, CheckCheck, CheckCircle2, Info, X, XCircle } from "lucide-react";
+import { Btn, EmptyState, ErrorBanner, LoadingState, PageHeader } from "@/app/components/kit";
 import { supabase } from "@/lib/supabase";
+import { formatRelative } from "@/lib/format";
+import type { Alert } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
-interface Alert {
-  id: string;
-  title: string;
-  message: string;
-  type: "info" | "warning" | "error" | "success";
-  timestamp: string;
-  read: boolean;
-}
-
-function formatTimestamp(raw: string): string {
-  if (!raw) return "";
-  const date = new Date(raw);
-  if (isNaN(date.getTime())) return raw;
-  const diff = Date.now() - date.getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
-
-const typeIcons = {
-  info: "ℹ️",
-  warning: "⚠️",
-  error: "❌",
-  success: "✓",
-};
+const TYPE = {
+  info: { icon: Info, tone: "bg-info-soft text-info" },
+  warning: { icon: AlertTriangle, tone: "bg-warn-soft text-warn" },
+  error: { icon: XCircle, tone: "bg-danger-soft text-danger" },
+  success: { icon: CheckCircle2, tone: "bg-success-soft text-success" },
+} as const;
 
 export default function AlertsPage() {
   const router = useRouter();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -52,111 +35,128 @@ export default function AlertsPage() {
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false });
 
-      if (!error && data) setAlerts(data as Alert[]);
+      if (error) setError(error.message);
+      else if (data) setAlerts(data as Alert[]);
       setLoading(false);
     }
     init();
   }, [router]);
 
   const handleDismiss = async (id: string) => {
-    await supabase.from("alerts").delete().eq("id", id);
-    setAlerts((prev) => prev.filter((a) => a.id !== id));
+    const prev = alerts;
+    setAlerts((a) => a.filter((x) => x.id !== id));
+    const { error } = await supabase.from("alerts").delete().eq("id", id);
+    if (error) { setAlerts(prev); setError(`Couldn't dismiss: ${error.message}`); }
   };
 
-  const handleMarkAsRead = async (id: string) => {
-    await supabase.from("alerts").update({ read: true }).eq("id", id);
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, read: true } : a))
-    );
+  const markRead = async (ids: string[]) => {
+    if (!ids.length) return;
+    setAlerts((a) => a.map((x) => (ids.includes(x.id) ? { ...x, read: true } : x)));
+    const { error } = await supabase.from("alerts").update({ read: true }).in("id", ids);
+    if (error) setError(`Couldn't update: ${error.message}`);
   };
 
-  const unreadCount = alerts.filter((a) => !a.read).length;
+  const unread = alerts.filter((a) => !a.read);
+  const visible = filter === "unread" ? unread : alerts;
 
-  if (loading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-amber-50 dark:bg-zinc-950 rounded-2xl transition-colors duration-200">
-        <p className="text-[#231E1F]/50 dark:text-zinc-500 [font-family:var(--font-outfit)]">Loading…</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingState label="Loading alerts…" />;
 
   return (
-    <div className="w-full h-full flex flex-col bg-amber-50 dark:bg-zinc-950 rounded-2xl overflow-hidden transition-colors duration-200">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-[#231E1F]/10 dark:border-zinc-800 flex items-center">
-        <div className="flex-1">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="flex items-center gap-2 text-[#231E1F] dark:text-zinc-300 hover:opacity-70 transition-opacity [font-family:var(--font-outfit)] font-semibold"
-          >
-            <ArrowLeft className="size-5" />
-            Back to Dashboard
-          </button>
+    <div className="flex h-full flex-col">
+      <PageHeader
+        title="Alerts"
+        description={unread.length ? `${unread.length} unread` : "All caught up"}
+        actions={
+          unread.length > 0 && (
+            <Btn variant="soft" onClick={() => markRead(unread.map((a) => a.id))}>
+              <CheckCheck /> Mark all read
+            </Btn>
+          )
+        }
+      />
+      {error && <ErrorBanner message={error} onClose={() => setError(null)} />}
+
+      <div className="px-5 pt-5 md:px-8">
+        <div className="inline-flex rounded-full bg-surface-2 p-1">
+          {(["all", "unread"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={cn(
+                "relative rounded-full px-4 py-1.5 text-sm font-medium capitalize transition-colors",
+                filter === f ? "text-ink-fg" : "text-muted hover:text-fg"
+              )}
+            >
+              {filter === f && (
+                <motion.span layoutId="alert-filter" className="absolute inset-0 rounded-full bg-ink" transition={{ type: "spring", stiffness: 420, damping: 34 }} />
+              )}
+              <span className="relative">
+                {f}
+                {f === "unread" && unread.length > 0 && ` · ${unread.length}`}
+              </span>
+            </button>
+          ))}
         </div>
-        <div className="text-center">
-          <h1 className="text-3xl text-[#231E1F] dark:text-zinc-100 font-semibold [font-family:var(--font-outfit)]">
-            Alerts
-          </h1>
-          {unreadCount > 0 && (
-            <p className="text-[#231E1F]/60 text-sm">
-              {unreadCount} unread alert{unreadCount !== 1 ? "s" : ""}
-            </p>
-          )}
-        </div>
-        <div className="flex-1" />
       </div>
 
-      {/* Alerts List */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          {alerts.length === 0 ? (
-            <div className="text-center py-12">
-              <Bell className="size-16 text-[#231E1F]/20 dark:text-zinc-700 mx-auto mb-4" />
-              <p className="text-[#231E1F]/50 text-lg [font-family:var(--font-outfit)]">
-                No alerts at this time
-              </p>
-            </div>
-          ) : (
-            alerts.map((alert) => (
-              <div
-                key={alert.id}
-                className="p-4 rounded-2xl border-l-4 transition-all [font-family:var(--font-outfit)] bg-[#231E1F] dark:bg-zinc-700 border-white/10"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <span className="text-xl mt-0.5">{typeIcons[alert.type]}</span>
-                    <div className="flex-1">
+      <div className="flex-1 overflow-y-auto px-5 py-4 md:px-8">
+        {visible.length === 0 ? (
+          <EmptyState
+            icon={Bell}
+            title={filter === "unread" ? "Nothing unread" : "No alerts"}
+            hint="We'll let you know when something needs you."
+          />
+        ) : (
+          <ul className="space-y-2">
+            <AnimatePresence initial={false}>
+              {visible.map((alert, i) => {
+                const t = TYPE[alert.type] ?? TYPE.info;
+                const Icon = t.icon;
+                return (
+                  <motion.li
+                    key={alert.id}
+                    layout
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0, transition: { delay: Math.min(i * 0.04, 0.3) } }}
+                    exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
+                    className={cn(
+                      "group flex items-start gap-4 rounded-2xl border border-line p-4 transition-colors",
+                      alert.read ? "bg-transparent" : "bg-surface-2/60"
+                    )}
+                  >
+                    <span className={cn("grid size-10 shrink-0 place-items-center rounded-full", t.tone)}>
+                      <Icon className="size-[18px]" />
+                    </span>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white">{alert.title}</h3>
+                        <h3 className={cn("truncate font-semibold", alert.read ? "text-muted" : "text-fg")}>{alert.title}</h3>
+                        {!alert.read && <span className="size-2 shrink-0 rounded-full bg-accent" />}
+                      </div>
+                      <p className="mt-0.5 text-sm leading-relaxed text-muted">{alert.message}</p>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-subtle">
+                          {formatRelative(alert.timestamp)}
+                        </span>
                         {!alert.read && (
-                          <span className="w-2 h-2 bg-blue-400 rounded-full" />
+                          <button onClick={() => markRead([alert.id])} className="text-xs font-medium text-accent hover:underline">
+                            Mark read
+                          </button>
                         )}
                       </div>
-                      <p className="text-gray-300 text-sm mt-1">{alert.message}</p>
-                      <p className="text-gray-500 text-xs mt-2">{formatTimestamp(alert.timestamp)}</p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    {!alert.read && (
-                      <button
-                        onClick={() => handleMarkAsRead(alert.id)}
-                        className="px-3 py-1 text-xs font-semibold bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
-                      >
-                        Mark as read
-                      </button>
-                    )}
                     <button
                       onClick={() => handleDismiss(alert.id)}
-                      className="text-gray-500 hover:text-white transition-colors"
+                      aria-label="Dismiss"
+                      className="grid size-8 shrink-0 place-items-center rounded-full text-subtle opacity-60 transition-all hover:bg-surface-3 hover:text-fg group-hover:opacity-100"
                     >
-                      <X className="size-5" />
+                      <X className="size-4" />
                     </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                  </motion.li>
+                );
+              })}
+            </AnimatePresence>
+          </ul>
+        )}
       </div>
     </div>
   );

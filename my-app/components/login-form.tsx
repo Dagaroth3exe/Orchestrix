@@ -1,243 +1,197 @@
-"use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { AnimatePresence, motion } from "framer-motion"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card"
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { supabase } from "@/lib/supabase"
+"use client";
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  const router = useRouter()
-  const [mode, setMode] = useState<"login" | "register">("login")
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { inputClass } from "@/app/components/kit";
+import { isPreview, supabase } from "@/lib/supabase";
+import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demoClient";
+import { cn } from "@/lib/utils";
 
-  // Login fields
-  const [loginEmail, setLoginEmail] = useState("")
-  const [loginPassword, setLoginPassword] = useState("")
-  const [loginError, setLoginError] = useState("")
+type Mode = "login" | "register";
 
-  // Register fields
-  const [regName, setRegName] = useState("")
-  const [regEmail, setRegEmail] = useState("")
-  const [regPassword, setRegPassword] = useState("")
-  const [regError, setRegError] = useState("")
+export function LoginForm({ className }: { className?: string }) {
+  const router = useRouter();
+  const [mode, setMode] = useState<Mode>("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
-    setLoginError("")
+  const switchMode = (m: Mode) => {
+    setMode(m);
+    setError("");
+    setInfo("");
+  };
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password: loginPassword,
-    })
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setInfo("");
+    setBusy(true);
 
-    if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        setLoginError("Please confirm your email — check your inbox for a verification link.")
-      } else {
-        setLoginError(error.message)
+    try {
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          setError(
+            error.message.toLowerCase().includes("email not confirmed")
+              ? "Please confirm your email — check your inbox for a verification link."
+              : error.message
+          );
+          return;
+        }
+        router.push("/dashboard");
+        return;
       }
-      return
-    }
 
-    router.push("/dashboard")
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name } },
+      });
+      if (error) { setError(error.message); return; }
+      if (!data.session) {
+        setInfo("Almost there — check your inbox to confirm your email, then sign in.");
+        setMode("login");
+        return;
+      }
+      router.push("/dashboard");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(
+        msg.includes("Missing NEXT_PUBLIC_SUPABASE")
+          ? "Sign-in isn't configured yet: add your Supabase URL and anon key to .env.local and restart the dev server."
+          : msg.toLowerCase().includes("fetch")
+            ? "Couldn't reach the server. Check your connection and Supabase URL, then try again."
+            : msg
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function handleRegister(e: React.FormEvent) {
-    e.preventDefault()
-    setRegError("")
-
-    const { error } = await supabase.auth.signUp({
-      email: regEmail,
-      password: regPassword,
-      options: { data: { full_name: regName } },
-    })
-
-    if (error) {
-      setRegError(error.message)
-      return
-    }
-
-    router.push("/dashboard")
-  }
+  const field = cn(inputClass, "h-12");
 
   return (
-    <div className={cn("flex flex-col gap-4", className)} {...props}>
-      <Card className="bg-white/10 backdrop-blur-md border border-white/20 shadow-xl">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-2 gap-6">
-            {/* Left column — mode tabs + social */}
-            <div className="flex flex-col justify-center gap-4 border-r border-white/20 pr-6">
+    <div className={cn("rounded-[32px] border border-line bg-surface/95 p-6 shadow-lift backdrop-blur-xl md:p-8", className)}>
+      {/* Mode switch */}
+      <div className="relative mb-7 grid grid-cols-2 rounded-full bg-surface-2 p-1">
+        {(["login", "register"] as Mode[]).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => switchMode(m)}
+            className={cn(
+              "relative rounded-full py-2 text-sm font-medium transition-colors",
+              mode === m ? "text-ink-fg" : "text-muted hover:text-fg"
+            )}
+          >
+            {mode === m && (
+              <motion.span
+                layoutId="auth-pill"
+                className="absolute inset-0 rounded-full bg-ink"
+                transition={{ type: "spring", stiffness: 420, damping: 34 }}
+              />
+            )}
+            <span className="relative">{m === "login" ? "Sign in" : "Create account"}</span>
+          </button>
+        ))}
+      </div>
 
-              {/* Login / Register toggle */}
-              <div className="flex rounded-lg overflow-hidden border border-white/20">
-                <button
-                  type="button"
-                  onClick={() => setMode("login")}
-                  className={cn(
-                    "flex-1 py-1.5 text-xs font-medium transition-colors",
-                    mode === "login"
-                      ? "bg-amber-50 text-black"
-                      : "text-amber-50/60 hover:text-amber-50 hover:bg-white/10"
-                  )}
-                >
-                  Login
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("register")}
-                  className={cn(
-                    "flex-1 py-1.5 text-xs font-medium transition-colors",
-                    mode === "register"
-                      ? "bg-amber-50 text-black"
-                      : "text-amber-50/60 hover:text-amber-50 hover:bg-white/10"
-                  )}
-                >
-                  Register
-                </button>
-              </div>
+      {isPreview && mode === "login" && (
+        <div className="mb-5 rounded-2xl border border-dashed border-accent/40 bg-accent-soft p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">preview mode</p>
+          <p className="mt-1.5 text-sm text-fg">
+            Sign in with <span className="font-medium">{DEMO_EMAIL}</span> / <span className="font-medium">{DEMO_PASSWORD}</span>, or create any account. Data stays in this browser.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setEmail(DEMO_EMAIL); setPassword(DEMO_PASSWORD); setError(""); }}
+            className="mt-3 text-xs font-semibold text-accent underline-offset-4 hover:underline"
+          >
+            Fill in demo login →
+          </button>
+        </div>
+      )}
 
-              <p className="text-sm text-amber-50/60 text-center">Or sign in with</p>
-              <Button variant="outline" type="button" className="w-full bg-white/10 border-white/20 text-amber-50 hover:bg-white/20 hover:text-amber-50">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4">
-                  <path
-                    d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
-                    fill="currentColor"
-                  />
-                </svg>
-                Apple
-              </Button>
-              <Button variant="outline" type="button" className="w-full bg-white/10 border-white/20 text-amber-50 hover:bg-white/20 hover:text-amber-50">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4">
-                  <path
-                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                    fill="currentColor"
-                  />
-                </svg>
-                Google
-              </Button>
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <AnimatePresence initial={false}>
+          {mode === "register" && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden"
+            >
+              <label className="block pb-0.5">
+                <span className="sr-only">Name</span>
+                <input
+                  className={field}
+                  placeholder="Your name"
+                  autoComplete="name"
+                  required={mode === "register"}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </label>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            {/* Right column — swaps between login and register */}
-            <div className="flex flex-col justify-center min-h-55">
-              <AnimatePresence mode="wait">
-                {mode === "login" ? (
-                  <motion.form
-                    key="login"
-                    onSubmit={handleLogin}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.25 }}
-                  >
-                    <FieldGroup>
-                      <Field>
-                        <FieldLabel htmlFor="email" className="text-amber-50/80">Email</FieldLabel>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="m@example.com"
-                          required
-                          value={loginEmail}
-                          onChange={e => setLoginEmail(e.target.value)}
-                          className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30"
-                        />
-                      </Field>
-                      <Field>
-                        <div className="flex items-center">
-                          <FieldLabel htmlFor="password" className="text-amber-50/80">Password</FieldLabel>
-                          <a href="#" className="ml-auto text-xs underline-offset-4 hover:underline text-amber-50/50 hover:text-amber-50">
-                            Forgot?
-                          </a>
-                        </div>
-                        <Input
-                          id="password"
-                          type="password"
-                          required
-                          value={loginPassword}
-                          onChange={e => setLoginPassword(e.target.value)}
-                          className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30"
-                        />
-                      </Field>
-                      {loginError && <p className="text-xs text-red-400">{loginError}</p>}
-                      <Field>
-                        <Button type="submit" className="w-full bg-amber-50 text-black hover:bg-amber-100">Login</Button>
-                      </Field>
-                    </FieldGroup>
-                  </motion.form>
-                ) : (
-                  <motion.form
-                    key="register"
-                    onSubmit={handleRegister}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.25 }}
-                  >
-                    <FieldGroup>
-                      <Field>
-                        <FieldLabel htmlFor="name" className="text-amber-50/80">Name</FieldLabel>
-                        <Input
-                          id="name"
-                          type="text"
-                          placeholder="Your name"
-                          required
-                          value={regName}
-                          onChange={e => setRegName(e.target.value)}
-                          className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30"
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel htmlFor="reg-email" className="text-amber-50/80">Email</FieldLabel>
-                        <Input
-                          id="reg-email"
-                          type="email"
-                          placeholder="m@example.com"
-                          required
-                          value={regEmail}
-                          onChange={e => setRegEmail(e.target.value)}
-                          className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30"
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel htmlFor="reg-password" className="text-amber-50/80">Password</FieldLabel>
-                        <Input
-                          id="reg-password"
-                          type="password"
-                          required
-                          value={regPassword}
-                          onChange={e => setRegPassword(e.target.value)}
-                          className="bg-white/10 border-white/20 text-amber-50 placeholder:text-amber-50/30 focus-visible:ring-white/30"
-                        />
-                      </Field>
-                      {regError && <p className="text-xs text-red-400">{regError}</p>}
-                      <Field>
-                        <Button type="submit" className="w-full bg-amber-50 text-black hover:bg-amber-100">Create account</Button>
-                      </Field>
-                    </FieldGroup>
-                  </motion.form>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      <FieldDescription className="px-4 text-center text-xs text-amber-50/40">
-        By continuing you agree to our <a href="#" className="text-amber-50/70 hover:text-amber-50 underline-offset-4 hover:underline">Terms</a> and <a href="#" className="text-amber-50/70 hover:text-amber-50 underline-offset-4 hover:underline">Privacy Policy</a>.
-      </FieldDescription>
+        <label className="block">
+          <span className="sr-only">Email</span>
+          <input
+            className={field}
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </label>
+        <label className="block">
+          <span className="sr-only">Password</span>
+          <input
+            className={field}
+            type="password"
+            placeholder="Password"
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </label>
+
+        {error && <p className="rounded-2xl bg-danger-soft px-4 py-2.5 text-sm text-danger">{error}</p>}
+        {info && <p className="rounded-2xl bg-success-soft px-4 py-2.5 text-sm text-success">{info}</p>}
+
+        <button
+          type="submit"
+          disabled={busy}
+          className="group mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent text-sm font-semibold text-accent-ink transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60"
+        >
+          {busy ? "One moment…" : mode === "login" ? "Enter your day" : "Create my account"}
+          {!busy && <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />}
+        </button>
+      </form>
+
+      <p className="mt-6 text-center text-xs text-subtle">
+        {mode === "login" ? "New here? " : "Already have an account? "}
+        <button
+          type="button"
+          onClick={() => switchMode(mode === "login" ? "register" : "login")}
+          className="font-medium text-fg underline-offset-4 hover:underline"
+        >
+          {mode === "login" ? "Create an account" : "Sign in"}
+        </button>
+      </p>
     </div>
-  )
+  );
 }

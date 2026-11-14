@@ -1,155 +1,126 @@
-import { Search, Plus, CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, ListTodo } from "lucide-react";
+import { Btn, EmptyState, SearchInput, priorityStyles } from "@/app/components/kit";
+import { daysUntil, formatDue } from "@/lib/format";
+import type { Priority, Task } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  priority: "high" | "medium" | "low";
-  dueDate: string;
-  completed: boolean;
-}
+type Filter = "all" | Priority;
 
 interface TasksListProps {
   tasks: Task[];
   selectedTaskId: string | null;
   onSelectTask: (id: string) => void;
   onAddTask: () => void;
-  isAdding?: boolean;
   onToggleComplete: (id: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  filterPriority: "all" | "high" | "medium" | "low";
-  onFilterChange: (priority: "all" | "high" | "medium" | "low") => void;
+  filterPriority: Filter;
+  onFilterChange: (priority: Filter) => void;
 }
+
+const FILTERS: Filter[] = ["all", "high", "medium", "low"];
 
 export default function TasksList({
   tasks,
   selectedTaskId,
   onSelectTask,
   onAddTask,
-  isAdding = false,
   onToggleComplete,
   searchQuery,
   onSearchChange,
   filterPriority,
   onFilterChange,
 }: TasksListProps) {
-  const priorityColors = {
-    high: "bg-red-500",
-    medium: "bg-yellow-500",
-    low: "bg-green-500",
+  const q = searchQuery.toLowerCase();
+  const filtered = tasks.filter(
+    (t) =>
+      (t.title.toLowerCase().includes(q) || (t.description ?? "").toLowerCase().includes(q)) &&
+      (filterPriority === "all" || t.priority === filterPriority)
+  );
+  const open = filtered.filter((t) => !t.completed);
+  const done = filtered.filter((t) => t.completed);
+
+  const row = (task: Task) => {
+    const active = selectedTaskId === task.id;
+    const overdue = !task.completed && (daysUntil(task.dueDate) ?? 1) < 0;
+    return (
+      <li key={task.id}>
+        <div
+          className={cn(
+            "relative flex w-full items-start gap-3 rounded-xl px-3 py-2.5 transition-colors",
+            active ? "bg-accent-soft" : "hover:bg-surface-2"
+          )}
+        >
+          {active && <span className="absolute top-3 bottom-3 left-0 w-0.5 rounded-full bg-accent" />}
+          <button
+            onClick={() => onToggleComplete(task.id)}
+            aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+            className="mt-0.5 text-subtle transition-colors hover:text-accent"
+          >
+            {task.completed ? <CheckCircle2 className="size-5 text-success" /> : <Circle className="size-5" />}
+          </button>
+          <button onClick={() => onSelectTask(task.id)} className="min-w-0 flex-1 text-left">
+            <div className="flex items-center gap-2">
+              <h3 className={cn("truncate text-sm font-medium", task.completed ? "text-subtle line-through" : "text-fg")}>
+                {task.title}
+              </h3>
+            </div>
+            <p className={cn("mt-0.5 text-xs", overdue ? "text-danger" : "text-muted")}>
+              {task.completed ? "Completed" : formatDue(task.dueDate)}
+            </p>
+          </button>
+          <span className="mt-0.5 flex w-16 shrink-0 items-center justify-end gap-1.5 text-xs text-muted">
+            <span className={cn("size-1.5 rounded-full", priorityStyles[task.priority].dot)} />
+            {priorityStyles[task.priority].label}
+          </span>
+        </div>
+      </li>
+    );
   };
 
-  const filteredTasks = tasks.filter((task) => {
-    const matchesSearch =
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPriority = filterPriority === "all" || task.priority === filterPriority;
-    return matchesSearch && matchesPriority;
-  });
-
   return (
-    <div className="w-full h-full bg-[#231E1F] dark:bg-zinc-700 rounded-2xl p-4 flex flex-col transition-colors duration-200">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-white text-2xl font-semibold [font-family:var(--font-outfit)]">
-          Tasks
-        </h2>
-        <button
-          onClick={onAddTask}
-          disabled={isAdding}
-          className="bg-amber-50/80 hover:bg-amber-50 text-[#231E1F] p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="Add new task"
-        >
-          {isAdding ? <span className="text-xs font-semibold px-1">...</span> : <Plus className="size-5" />}
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4" />
-        <input
-          type="text"
-          placeholder="Search tasks..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-[#2a2522] dark:bg-zinc-600 text-white placeholder-gray-500 rounded-lg border border-gray-700 dark:border-zinc-500 focus:border-amber-50/30 focus:outline-none [font-family:var(--font-outfit)]"
-        />
-      </div>
-
-      {/* Filter Buttons */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-        {["all", "high", "medium", "low"].map((priority) => (
-          <button
-            key={priority}
-            onClick={() =>
-              onFilterChange(priority as "all" | "high" | "medium" | "low")
-            }
-            className={`px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap transition-all [font-family:var(--font-outfit)] ${
-              filterPriority === priority
-                ? "bg-amber-50 text-[#231E1F]"
-                : "bg-[#2a2522] dark:bg-zinc-600 text-gray-400 hover:bg-[#332f2a] dark:hover:bg-zinc-500"
-            }`}
-          >
-            {priority.charAt(0).toUpperCase() + priority.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Tasks List */}
-      <div className="flex-1 overflow-y-auto space-y-2">
-        {filteredTasks.length === 0 ? (
-          <div className="text-gray-400 text-center py-8 text-sm">
-            No tasks found
-          </div>
-        ) : (
-          filteredTasks.map((task) => (
+    <div className="flex h-full flex-col">
+      <div className="space-y-2.5 p-3">
+        <SearchInput value={searchQuery} onChange={onSearchChange} placeholder="Search tasks" />
+        <div className="flex gap-1 rounded-xl bg-surface-2 p-1">
+          {FILTERS.map((p) => (
             <button
-              key={task.id}
-              onClick={() => onSelectTask(task.id)}
-              className={`w-full text-left p-3 rounded-lg transition-all [font-family:var(--font-outfit)] group ${
-                selectedTaskId === task.id
-                  ? "bg-amber-50/20 border-l-4 border-amber-50"
-                  : "hover:bg-[#2a2522] dark:hover:bg-zinc-600"
-              }`}
+              key={p}
+              onClick={() => onFilterChange(p)}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium capitalize transition-all",
+                filterPriority === p ? "bg-surface text-fg shadow-soft" : "text-muted hover:text-fg"
+              )}
             >
-              <div className="flex items-start gap-3">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleComplete(task.id);
-                  }}
-                  className="mt-1 text-gray-400 hover:text-amber-50 transition-colors"
-                >
-                  {task.completed ? (
-                    <CheckCircle2 className="size-5 text-green-400" />
-                  ) : (
-                    <Circle className="size-5" />
-                  )}
-                </button>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3
-                      className={`font-semibold text-sm line-clamp-1 ${
-                        task.completed
-                          ? "text-gray-500 line-through"
-                          : "text-white"
-                      }`}
-                    >
-                      {task.title}
-                    </h3>
-                    <span
-                      className={`w-2 h-2 rounded-full ${priorityColors[task.priority]}`}
-                    ></span>
-                  </div>
-                  <p className="text-gray-400 text-xs line-clamp-1 mt-1">
-                    {task.description}
-                  </p>
-                  <p className="text-gray-500 text-xs mt-1">{task.dueDate}</p>
-                </div>
-              </div>
+              {p !== "all" && <span className={cn("size-1.5 rounded-full", priorityStyles[p].dot)} />}
+              {p}
             </button>
-          ))
+          ))}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-2 pb-3">
+        {tasks.length === 0 ? (
+          <EmptyState
+            icon={ListTodo}
+            title="No tasks yet"
+            hint="Break your work into small, doable steps."
+            action={<Btn variant="accent" size="sm" onClick={onAddTask}>Add a task</Btn>}
+          />
+        ) : filtered.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted">No tasks match these filters.</p>
+        ) : (
+          <>
+            <ul className="space-y-0.5">{open.map(row)}</ul>
+            {done.length > 0 && (
+              <>
+                <p className="mt-4 mb-1 px-3 text-[11px] font-medium uppercase tracking-[0.16em] text-subtle">
+                  Completed · {done.length}
+                </p>
+                <ul className="space-y-0.5">{done.map(row)}</ul>
+              </>
+            )}
+          </>
         )}
       </div>
     </div>
