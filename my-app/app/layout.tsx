@@ -1,24 +1,20 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, JetBrains_Mono, Lora, Outfit } from "next/font/google";
+import { Cormorant_Garamond, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import ScoreBackground from "./components/ScoreBackground";
 import AuthCookieSync from "./components/AuthCookieSync";
 import { DarkModeProvider, themeInitScript } from "./context/DarkMode";
 
-const outfit = Outfit({
-  variable: "--font-outfit",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const lora = Lora({
-  variable: "--font-lora",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
-  style: ["italic"],
-});
-
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
-  subsets: ["latin"],
+  style: ["normal", "italic"],
+  weight: ["500", "600", "700"],
 });
 
 const mono = JetBrains_Mono({
@@ -41,7 +37,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className={`${outfit.variable} ${lora.variable} ${mono.variable} ${bricolage.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${cormorant.variable} ${mono.variable} font-sans antialiased`}>
         <DarkModeProvider>
           <AuthCookieSync />
           <div className="relative h-dvh w-full overflow-hidden">

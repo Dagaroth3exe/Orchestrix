@@ -2,33 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Disc3, Pause, Play, RotateCcw } from "lucide-react";
 import { Btn, PageHeader } from "@/app/components/kit";
 import { cn } from "@/lib/utils";
 
 const PRESETS = [5, 15, 25, 45, 60];
 const R = 140;
 const C = 2 * Math.PI * R;
-
-function chime() {
-  const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-  const ac = new Ctx();
-  // two soft bell partials
-  [528, 792].forEach((freq, i) => {
-    const osc = ac.createOscillator();
-    const gain = ac.createGain();
-    osc.type = "sine";
-    osc.frequency.value = freq;
-    osc.connect(gain);
-    gain.connect(ac.destination);
-    const t = ac.currentTime + i * 0.12;
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
-    osc.start(t);
-    osc.stop(t + 2.3);
-  });
-}
 
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
@@ -39,7 +20,6 @@ export default function FocusPage() {
   const [running, setRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
   const [completed, setCompleted] = useState(0);
-  const [sound, setSound] = useState(true);
 
   // tick
   useEffect(() => {
@@ -52,7 +32,6 @@ export default function FocusPage() {
   useEffect(() => {
     if (!running || timeLeft > 0) return;
     const t = setTimeout(() => {
-      if (sound) chime();
       if (!isBreak) {
         setCompleted((c) => c + 1);
         setIsBreak(true);
@@ -63,7 +42,7 @@ export default function FocusPage() {
       }
     }, 0);
     return () => clearTimeout(t);
-  }, [running, timeLeft, isBreak, sessionMin, breakMin, sound]);
+  }, [running, timeLeft, isBreak, sessionMin, breakMin]);
 
   // show the clock in the tab title while running
   useEffect(() => {
@@ -117,10 +96,10 @@ export default function FocusPage() {
                 return (
                   <line
                     key={i}
-                    x1={150 + Math.sin(a) * r1}
-                    y1={150 - Math.cos(a) * r1}
-                    x2={150 + Math.sin(a) * 127}
-                    y2={150 - Math.cos(a) * 127}
+                    x1={(150 + Math.sin(a) * r1).toFixed(2)}
+                    y1={(150 - Math.cos(a) * r1).toFixed(2)}
+                    x2={(150 + Math.sin(a) * 127).toFixed(2)}
+                    y2={(150 - Math.cos(a) * 127).toFixed(2)}
                     stroke={i === (60 - (timeLeft % 60)) % 60 && running ? "var(--accent)" : "var(--line-strong)"}
                     strokeWidth={long ? 2 : 1}
                     strokeLinecap="round"
@@ -173,15 +152,6 @@ export default function FocusPage() {
               {running ? <Pause /> : <Play />}
               {running ? "Pause" : timeLeft < total ? "Resume" : "Start"}
             </Btn>
-            <Btn
-              variant="ghost"
-              size="icon"
-              onClick={() => setSound((s) => !s)}
-              aria-label={sound ? "Mute chime" : "Unmute chime"}
-              className="border border-line"
-            >
-              {sound ? <Volume2 /> : <VolumeX />}
-            </Btn>
           </div>
         </div>
 
@@ -231,12 +201,19 @@ export default function FocusPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-butter p-5 text-butter-fg">
-            <p className="text-sm font-semibold">Tip</p>
-            <p className="mt-1 text-sm leading-relaxed">
-              Close distracting tabs and write down the one task you&apos;ll work on before you start.
-            </p>
-          </div>
+          <Link
+            href="/Records"
+            className="group flex items-center gap-4 rounded-2xl bg-butter p-5 text-butter-fg transition-transform hover:-translate-y-0.5"
+          >
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-black/15">
+              <Disc3 className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">{isBreak ? "On a break? Put on a record" : "Need a breather?"}</span>
+              <span className="block text-xs opacity-80">Spin a Hans Zimmer record in the Listening Room.</span>
+            </span>
+            <ArrowRight className="size-5 shrink-0 transition-transform group-hover:translate-x-1" />
+          </Link>
         </div>
       </div>
     </div>

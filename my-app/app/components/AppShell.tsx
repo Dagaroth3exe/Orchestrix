@@ -3,16 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
   BookOpen,
   CheckSquare,
+  Disc3,
   ChevronDown,
   Home,
   LogOut,
   Moon,
+  Music2,
+  VolumeX,
   RotateCcw,
   Search,
   Sun,
@@ -25,6 +28,7 @@ import { useDarkMode } from "@/app/context/DarkMode";
 import { isPreview, supabase } from "@/lib/supabase";
 import { resetPreviewData } from "@/lib/demoClient";
 import { cn } from "@/lib/utils";
+import { isSoundOn, setSoundOn, sfx, subscribeSound, unlockAudio } from "@/lib/sound";
 
 const NAV: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Home", href: "/dashboard", icon: Home },
@@ -32,6 +36,7 @@ const NAV: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Tasks", href: "/Tasks", icon: CheckSquare },
   { label: "Focus", href: "/Focus", icon: Timer },
   { label: "Alerts", href: "/Alerts", icon: Bell },
+  { label: "Records", href: "/Records", icon: Disc3 },
 ];
 
 type Profile = { name: string; email: string };
@@ -75,15 +80,15 @@ export function Wordmark({ size = "md", showName = true }: { size?: "md" | "lg";
         <Image
           src={ShortBlackLogo}
           alt=""
-          width={size === "lg" ? 30 : 24}
           height={size === "lg" ? 34 : 28}
-          className="object-contain dark:invert"
+          width={Math.round(((size === "lg" ? 34 : 28) * ShortBlackLogo.width) / ShortBlackLogo.height)}
+          className="dark:invert"
         />
         <NoteMark className="absolute -top-1 -right-2.5 h-3.5 text-accent" />
       </span>
       {showName && (
-        <span className={cn("ml-1.5 font-display font-bold tracking-[-0.03em] text-fg", size === "lg" ? "text-2xl" : "text-xl")}>
-          orchestrix
+        <span className={cn("ml-2 font-display font-semibold uppercase tracking-[0.28em] text-fg", size === "lg" ? "text-xl" : "text-[17px]")}>
+          Orchestrix
         </span>
       )}
     </span>
@@ -147,7 +152,7 @@ function GlobalSearch() {
   };
 
   return (
-    <div ref={boxRef} className="relative hidden w-56 xl:block">
+    <div ref={boxRef} className="relative hidden w-44 xl:block 2xl:w-56">
       <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-subtle" />
       <input
         ref={inputRef}
@@ -230,16 +235,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const soundOn = useSyncExternalStore(subscribeSound, isSoundOn, () => true);
+
+  // browsers only allow audio after a user gesture — unlock on the first one
+  useEffect(() => {
+    const unlock = () => unlockAudio();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
 
   return (
     <div className="flex h-dvh flex-col">
       {/* ── Top bar: three equal zones — brand | nav | actions ── */}
-      <header className="relative z-30 grid h-16 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-line bg-surface/90 px-4 backdrop-blur-xl md:px-6">
+      <header className="relative z-30 grid h-16 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-line bg-surface/[0.92] px-4 backdrop-blur-md md:px-6">
         {/* left: brand */}
         <Link href="/" aria-label="Orchestrix home" className="flex items-center gap-2.5 justify-self-start pl-1">
           <Wordmark />
           {isPreview && (
-            <span className="hidden rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-accent sm:inline">
+            <span className="hidden rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-accent 2xl:inline">
               preview
             </span>
           )}
@@ -247,14 +264,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* centre: nav */}
         <nav className="hidden items-center gap-1 rounded-2xl bg-surface-2/70 p-1 md:flex">
-          {NAV.map(({ label, href, icon: Icon }) => {
+          {NAV.map(({ label, href, icon: Icon }, i) => {
             const active = isActive(href);
             return (
               <Link
                 key={href}
                 href={href}
+                onMouseEnter={() => sfx.navHover(i)}
+                onClick={() => !isActive(href) && sfx.nav(i)}
                 className={cn(
-                  "relative flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium transition-colors",
+                  "relative flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium transition-colors 2xl:px-4",
                   active ? "text-accent-ink" : "text-muted hover:text-fg"
                 )}
               >
@@ -286,6 +305,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* right: actions */}
         <div className="flex items-center gap-2 justify-self-end">
           <GlobalSearch />
+          <button
+            onClick={() => setSoundOn(!soundOn)}
+            aria-label={soundOn ? "Mute navbar sounds" : "Turn navbar sounds on"}
+            title={soundOn ? "Navbar sounds on" : "Navbar sounds off"}
+            className={cn(
+              "hidden size-10 place-items-center rounded-xl transition-colors hover:bg-surface-2 md:grid",
+              soundOn ? "text-accent" : "text-muted hover:text-fg"
+            )}
+          >
+            {soundOn ? <Music2 className="size-[18px]" /> : <VolumeX className="size-[18px]" />}
+          </button>
           <button
             onClick={(e) => toggle(e)}
             aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
@@ -358,12 +388,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* ── Content: fills the rest of the screen ── */}
-      <main className="relative min-h-0 flex-1 overflow-hidden bg-surface/[0.94]">
+      <main className="relative min-h-0 flex-1 overflow-hidden bg-surface/[0.9]">
         <motion.div
           key={pathname}
-          initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+          initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
           className="h-full"
         >
           {children}

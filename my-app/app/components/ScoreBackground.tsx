@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 /**
- * "The Score" — the Orchestrix ambient background.
+ * "The Score" — the Orchestrix ambient background (cinematic stage).
  *
  * Faint musical staves scroll slowly across a dotted stage, with notes and
  * bar lines generated deterministically so the score never repeats. The
@@ -17,7 +17,7 @@ const LINE_GAP = 10; // distance between the 5 staff lines
 const STAVE_SPACING = 150; // distance between staves
 const BAR = 280; // bar width in px
 const BEAT = BAR / 4;
-const SPEED = 0.012; // px per ms
+const SPEED = 0.0065; // px per ms — slow, deliberate tempo
 const BATON_R = 170;
 const WAVE_LIFE = 2200;
 
@@ -44,6 +44,9 @@ export default function ScoreBackground() {
     let last = performance.now();
     let scroll = 0;
     const waves: { x: number; y: number; t0: number }[] = [];
+    // notes the baton is currently touching (so each touch plays once) + visual "played" bursts
+    const touching = new Set<string>();
+    const bursts: { x: number; y: number; t0: number; accent: boolean }[] = [];
     const baton = { x: -9999, y: -9999, tx: -9999, ty: -9999, s: 0, target: 0 };
     const col = { line: "244 241 236", a: 0.05, note: "238 149 128" };
 
@@ -120,7 +123,20 @@ export default function ScoreBackground() {
           const ny = stave + 4 * LINE_GAP - step * (LINE_GAP / 2);
           const y = ny + disp(x, ny, now, live);
           const accent = hash(s + 3, b, 9) < 0.14;
-          const near = baton.s > 0.01 ? Math.max(0, 1 - Math.hypot(x - baton.x, y - baton.y) / BATON_R) * baton.s : 0;
+          const dist = Math.hypot(x - baton.x, y - baton.y);
+          const near = baton.s > 0.01 ? Math.max(0, 1 - dist / BATON_R) * baton.s : 0;
+
+          // the baton lights a note when it first touches it
+          const key = `${s}:${b}`;
+          if (baton.target > 0 && dist < 18) {
+            if (!touching.has(key)) {
+              touching.add(key);
+              bursts.push({ x, y, t0: now, accent });
+              if (bursts.length > 24) bursts.shift();
+            }
+          } else if (dist > 34) {
+            touching.delete(key);
+          }
 
           const alpha = accent ? 0.55 + near * 0.4 : col.a * 3 + near * 0.55;
           const rgb = accent || near > 0.25 ? col.note : col.line;
@@ -143,6 +159,27 @@ export default function ScoreBackground() {
           }
           ctx!.stroke();
         }
+      }
+
+      // "played" note bursts: a small ring + glow that fades over ~0.9s
+      for (let i = bursts.length - 1; i >= 0; i--) {
+        const bt = bursts[i];
+        const age = (now - bt.t0) / 900;
+        if (age >= 1 || age < 0) { if (age >= 1) bursts.splice(i, 1); continue; }
+        const r = 6 + age * 26;
+        ctx!.strokeStyle = `rgb(${col.note} / ${(bt.accent ? 0.75 : 0.55) * (1 - age)})`;
+        ctx!.lineWidth = 1.5;
+        ctx!.beginPath();
+        ctx!.arc(bt.x, bt.y, r, 0, Math.PI * 2);
+        ctx!.stroke();
+        const g = ctx!.createRadialGradient(bt.x, bt.y, 0, bt.x, bt.y, 14);
+        g.addColorStop(0, `rgb(${col.note} / ${0.35 * (1 - age)})`);
+        g.addColorStop(1, `rgb(${col.note} / 0)`);
+        ctx!.fillStyle = g;
+        ctx!.beginPath();
+        ctx!.arc(bt.x, bt.y, 14, 0, Math.PI * 2);
+        ctx!.fill();
+        ctx!.lineWidth = 1;
       }
 
       // downbeat rings
@@ -220,8 +257,23 @@ export default function ScoreBackground() {
   }, []);
 
   return (
-    <div aria-hidden className="dot-grid pointer-events-none absolute inset-0 z-0 bg-bg">
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-bg">
+      {/* stage spotlight from above, slowly breathing */}
+      <div
+        className="absolute top-[-35vh] left-1/2 h-[95vh] w-[120vw] animate-stage rounded-[50%] blur-3xl"
+        style={{ background: "radial-gradient(closest-side, rgb(var(--stage-light) / 0.14), transparent 70%)" }}
+      />
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+      {/* vignette */}
+      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 50% 40%, transparent 45%, var(--vignette) 100%)" }} />
+      {/* film grain */}
+      <div
+        className="absolute -inset-[10%] animate-grain opacity-[0.07] mix-blend-overlay"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
+        }}
+      />
     </div>
   );
 }

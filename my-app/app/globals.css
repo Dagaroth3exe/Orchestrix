@@ -6,93 +6,99 @@
    Dark is the primary look; light is a warm paper variant.            */
 
 :root {
-  --bg: #ece8e2;
-  --surface: #f8f6f2;
-  --surface-2: #e7e2da;
-  --surface-3: #ddd6cb;
-  --line: rgb(22 21 20 / 0.08);
-  --line-strong: rgb(22 21 20 / 0.16);
-  --fg: #171615;
-  --muted: rgb(23 22 21 / 0.62);
-  --subtle: rgb(23 22 21 / 0.42);
-  --accent: #e07a62;
-  --accent-strong: #cf6650;
-  --accent-soft: rgb(224 122 98 / 0.14);
-  --accent-ink: #1b1715;
-  --ink: #171615;
-  --ink-fg: #f6f3ee;
-  --danger: #d0453a;
-  --danger-soft: rgb(208 69 58 / 0.12);
-  --success: #3e8a6d;
-  --success-soft: rgb(62 138 109 / 0.14);
-  --info: #4a72b0;
-  --info-soft: rgb(74 114 176 / 0.14);
-  --warn: #b5810f;
-  --warn-soft: rgb(242 210 139 / 0.35);
-  --glass: rgb(248 246 242 / 0.8);
-  --dot: rgb(23 22 21 / 0.09);
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 10px 30px -14px rgb(0 0 0 / 0.16);
-  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.05), 0 28px 60px -20px rgb(0 0 0 / 0.25);
+  /* parchment & ink (light) */
+  --bg: #ece6da;
+  --surface: #f6f2ea;
+  --surface-2: #e6dfd1;
+  --surface-3: #dbd2c1;
+  --line: rgb(20 17 12 / 0.1);
+  --line-strong: rgb(20 17 12 / 0.18);
+  --fg: #16130e;
+  --muted: rgb(22 19 14 / 0.64);
+  --subtle: rgb(22 19 14 / 0.44);
+  --accent: #8f6a26;
+  --accent-strong: #7a5a1e;
+  --accent-soft: rgb(143 106 38 / 0.13);
+  --accent-ink: #fbf5e9;
+  --ink: #16130e;
+  --ink-fg: #f6f2ea;
+  --danger: #a83a32;
+  --danger-soft: rgb(168 58 50 / 0.12);
+  --success: #3f6b58;
+  --success-soft: rgb(63 107 88 / 0.13);
+  --info: #3d5578;
+  --info-soft: rgb(61 85 120 / 0.13);
+  --warn: #8f6a26;
+  --warn-soft: rgb(143 106 38 / 0.15);
+  --glass: rgb(246 242 234 / 0.82);
+  --dot: rgb(22 19 14 / 0.07);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 12px 32px -16px rgb(0 0 0 / 0.22);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.06), 0 30px 70px -24px rgb(0 0 0 / 0.35);
 
-  /* pastel sections */
-  --coral: #ec9a86;
-  --coral-fg: #1b1715;
-  --mint: #9fd9c2;
-  --mint-fg: #12201b;
-  --sky: #a9c6ee;
-  --sky-fg: #121a26;
-  --butter: #f2d38b;
-  --butter-fg: #221b0c;
-  --block-ink: #1d1c1b;
-  --block-ink-fg: #f6f3ee;
+  /* sections — deep, muted, cinematic */
+  --coral: #6e2b29;     /* oxblood */
+  --coral-fg: #f5e9dd;
+  --mint: #2f4b45;      /* verdigris */
+  --mint-fg: #e4efe9;
+  --sky: #2c394b;       /* steel */
+  --sky-fg: #e3e9f2;
+  --butter: #7c5e26;    /* brass */
+  --butter-fg: #f8ecd3;
+  --block-ink: #16130e;
+  --block-ink-fg: #f6f2ea;
 
-  /* score background */
-  --staff-line: 23 22 21;
-  --staff-alpha: 0.07;
-  --staff-note: 224 122 98;
+  /* score & stage */
+  --staff-line: 22 19 14;
+  --staff-alpha: 0.06;
+  --staff-note: 143 106 38;
+  --stage-light: 143 106 38;
+  --vignette: rgb(60 45 20 / 0.18);
 
   color-scheme: light;
 }
 
 .dark {
-  --bg: #121212;
-  --surface: #1c1c1c;
-  --surface-2: #262626;
-  --surface-3: #303030;
-  --line: rgb(255 255 255 / 0.06);
-  --line-strong: rgb(255 255 255 / 0.13);
-  --fg: #f4f1ec;
-  --muted: rgb(244 241 236 / 0.6);
-  --subtle: rgb(244 241 236 / 0.38);
-  --accent: #ee9580;
-  --accent-strong: #f5a894;
-  --accent-soft: rgb(238 149 128 / 0.14);
-  --accent-ink: #1b1715;
-  --ink: #f4f1ec;
-  --ink-fg: #161616;
-  --danger: #ff7b6e;
-  --danger-soft: rgb(255 123 110 / 0.13);
-  --success: #8fd8bb;
-  --success-soft: rgb(143 216 187 / 0.13);
-  --info: #a9c6ee;
-  --info-soft: rgb(169 198 238 / 0.13);
-  --warn: #f2d38b;
-  --warn-soft: rgb(242 211 139 / 0.13);
-  --glass: rgb(28 28 28 / 0.78);
-  --dot: rgb(255 255 255 / 0.07);
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px -14px rgb(0 0 0 / 0.7);
-  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.4), 0 28px 60px -20px rgb(0 0 0 / 0.85);
+  /* the stage: near-black, warm parchment text, brass */
+  --bg: #0a0a0b;
+  --surface: #121213;
+  --surface-2: #1a1a1c;
+  --surface-3: #242426;
+  --line: rgb(236 228 214 / 0.07);
+  --line-strong: rgb(236 228 214 / 0.14);
+  --fg: #ece4d6;
+  --muted: rgb(236 228 214 / 0.6);
+  --subtle: rgb(236 228 214 / 0.38);
+  --accent: #c9a45c;
+  --accent-strong: #dbb873;
+  --accent-soft: rgb(201 164 92 / 0.12);
+  --accent-ink: #15110a;
+  --ink: #ece4d6;
+  --ink-fg: #121213;
+  --danger: #d36a5f;
+  --danger-soft: rgb(211 106 95 / 0.13);
+  --success: #82b29b;
+  --success-soft: rgb(130 178 155 / 0.12);
+  --info: #8ea7c9;
+  --info-soft: rgb(142 167 201 / 0.12);
+  --warn: #d6aa55;
+  --warn-soft: rgb(214 170 85 / 0.12);
+  --glass: rgb(18 18 19 / 0.8);
+  --dot: rgb(236 228 214 / 0.045);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 12px 32px -16px rgb(0 0 0 / 0.8);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.5), 0 30px 70px -24px rgb(0 0 0 / 0.9);
 
-  --coral: #ec9a86;
-  --mint: #9fd9c2;
-  --sky: #a9c6ee;
-  --butter: #f2d38b;
-  --block-ink: #2a2a2a;
-  --block-ink-fg: #f4f1ec;
+  --coral: #5c2321;
+  --mint: #26403b;
+  --sky: #243143;
+  --butter: #6b5020;
+  --block-ink: #1d1d1f;
+  --block-ink-fg: #ece4d6;
 
-  --staff-line: 244 241 236;
-  --staff-alpha: 0.05;
-  --staff-note: 238 149 128;
+  --staff-line: 236 228 214;
+  --staff-alpha: 0.045;
+  --staff-note: 201 164 92;
+  --stage-light: 201 164 92;
+  --vignette: rgb(0 0 0 / 0.65);
 
   color-scheme: dark;
 }
@@ -148,17 +154,31 @@
   --shadow-soft: var(--shadow);
   --shadow-lift: var(--shadow-lg);
 
-  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-bricolage), var(--font-outfit), ui-sans-serif, sans-serif;
-  --font-serif: var(--font-lora), ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
   --font-mono: var(--font-mono-face), ui-monospace, SFMono-Regular, monospace;
 
   --animate-breathe: breathe 8s ease-in-out infinite;
+  --animate-stage: stage 14s ease-in-out infinite;
+  --animate-grain: grain 1.2s steps(6) infinite;
   --animate-eq: eq 1s ease-in-out infinite;
 
   @keyframes breathe {
     0%, 100% { transform: scale(1); opacity: 0.55; }
     50% { transform: scale(1.06); opacity: 0.9; }
+  }
+  @keyframes stage {
+    0%, 100% { opacity: 0.55; transform: translateX(-50%) scale(1); }
+    50% { opacity: 0.9; transform: translateX(-50%) scale(1.08); }
+  }
+  @keyframes grain {
+    0% { transform: translate(0, 0); }
+    20% { transform: translate(-3%, 2%); }
+    40% { transform: translate(2%, -3%); }
+    60% { transform: translate(-2%, -1%); }
+    80% { transform: translate(3%, 3%); }
+    100% { transform: translate(0, 0); }
   }
   @keyframes eq {
     0%, 100% { transform: scaleY(0.3); }
@@ -228,4 +248,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Cormorant defaults to old-style figures; numbers in the UI should line up */
+.font-display,
+.font-serif {
+  font-variant-numeric: lining-nums;
 }

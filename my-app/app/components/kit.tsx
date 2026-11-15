@@ -47,7 +47,7 @@ export function Eyebrow({ children, className }: { children: React.ReactNode; cl
 /** Chunky display heading. */
 export function Display({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <h1 className={cn("font-display text-3xl leading-tight font-bold tracking-[-0.025em] text-fg md:text-4xl", className)}>
+    <h1 className={cn("font-display text-4xl leading-tight font-semibold tracking-[-0.01em] text-fg md:text-[2.75rem]", className)}>
       {children}
     </h1>
   );

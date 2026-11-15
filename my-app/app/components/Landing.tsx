@@ -22,7 +22,7 @@ const FEATURES: { icon: LucideIcon; title: string; text: string; tone: string }[
 function RiseLine({ children, delay }: { children: React.ReactNode; delay: number }) {
   return (
     <span className="block overflow-hidden pb-[0.08em]">
-      <motion.span className="block" initial={{ y: "105%" }} animate={{ y: 0 }} transition={{ duration: 1, ease: EASE, delay }}>
+      <motion.span className="block" initial={{ y: "105%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay }}>
         {children}
       </motion.span>
     </span>
@@ -61,7 +61,7 @@ export default function Landing() {
 
       {/* Hero — two balanced columns, vertically centred in the remaining screen */}
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto grid min-h-full w-full max-w-6xl content-center gap-8 px-5 py-10 md:px-8 lg:grid-cols-2 lg:gap-x-16 lg:gap-y-8">
+        <div className="mx-auto grid min-h-full w-full max-w-6xl content-center justify-center gap-8 px-5 py-10 md:px-8 lg:grid-cols-[minmax(0,34rem)_26rem] lg:gap-x-20 lg:gap-y-8">
           {/* Left (top): message */}
           <div className="lg:self-end">
             <motion.p
@@ -74,7 +74,7 @@ export default function Landing() {
               Your day, orchestrated
             </motion.p>
 
-            <h1 className="font-display text-[clamp(3rem,7vw,5.5rem)] leading-[0.95] font-bold tracking-[-0.04em] text-fg">
+            <h1 className="font-display text-[clamp(3.4rem,7.5vw,6.25rem)] leading-[0.92] font-semibold tracking-[-0.015em] text-fg">
               <RiseLine delay={0.1}>Conduct</RiseLine>
               <RiseLine delay={0.22}>
                 your <span className="font-serif font-normal italic tracking-[-0.02em]">day</span>
@@ -98,7 +98,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.8, ease: EASE }}
-            className="w-full max-w-md justify-self-center lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center lg:justify-self-end"
+            className="w-full max-w-md justify-self-center lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-w-none lg:self-center lg:justify-self-stretch"
           >
             {signedIn ? (
               <div className="rounded-3xl border border-line bg-surface p-8 shadow-lift">

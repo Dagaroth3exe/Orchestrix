@@ -276,7 +276,7 @@ function Stat({
           </span>
         </div>
         <div>
-          <p className="font-display text-4xl leading-none font-bold tracking-[-0.03em] tabular-nums">{value}</p>
+          <p className="font-display text-5xl leading-none font-semibold tabular-nums">{value}</p>
           <p className="mt-1.5 truncate text-xs opacity-70">{caption}</p>
         </div>
       </Link>
