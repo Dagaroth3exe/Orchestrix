@@ -16,7 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Btn, LoadingState, PageHeader, priorityStyles } from "@/app/components/kit";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/db";
 import { daysUntil, formatRelative, greeting } from "@/lib/format";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -47,7 +47,7 @@ export default function HomePage() {
 
   useEffect(() => {
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       if (!session) { router.push("/Login"); return; }
       const id = session.user.id;
       setUid(id);
@@ -55,14 +55,14 @@ export default function HomePage() {
       setName((meta.full_name ?? meta.name ?? "").split(" ")[0]);
 
       const [t, n, a] = await Promise.all([
-        supabase.from("tasks").select("id, title, description, priority, due_date, completed").eq("user_id", id),
-        supabase
+        db.from("tasks").select("id, title, description, priority, due_date, completed").eq("user_id", id),
+        db
           .from("notes")
           .select("id, title, preview, updated_at", { count: "exact" })
           .eq("user_id", id)
           .order("updated_at", { ascending: false })
           .limit(4),
-        supabase.from("alerts").select("id", { count: "exact", head: true }).eq("user_id", id).eq("read", false),
+        db.from("alerts").select("id", { count: "exact", head: true }).eq("user_id", id).eq("read", false),
       ]);
       setTasks(
         (t.data ?? []).map((r) => ({
@@ -106,12 +106,12 @@ export default function HomePage() {
 
   const toggle = async (task: Task) => {
     setTasks((p) => p.map((t) => (t.id === task.id ? { ...t, completed: !t.completed } : t)));
-    const { error } = await supabase.from("tasks").update({ completed: !task.completed }).eq("id", task.id);
+    const { error } = await db.from("tasks").update({ completed: !task.completed }).eq("id", task.id);
     if (error) setTasks((p) => p.map((t) => (t.id === task.id ? task : t)));
   };
 
   const addTask = async (title: string, day: Date) => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("tasks")
       .insert({ user_id: uid, title, description: "", priority: "medium", due_date: isoDay(day), completed: false })
       .select()
@@ -122,7 +122,7 @@ export default function HomePage() {
   };
 
   const newNote = async () => {
-    const { data } = await supabase
+    const { data } = await db
       .from("notes")
       .insert({ user_id: uid, title: "Untitled note", preview: "", content: "" })
       .select()

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import ScoreBackground from "./components/ScoreBackground";
-import AuthCookieSync from "./components/AuthCookieSync";
 import { DarkModeProvider, themeInitScript } from "./context/DarkMode";
 
 const inter = Inter({
@@ -39,7 +38,6 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${cormorant.variable} ${mono.variable} font-sans antialiased`}>
         <DarkModeProvider>
-          <AuthCookieSync />
           <div className="relative h-dvh w-full overflow-hidden">
             <ScoreBackground />
             <div className="relative z-10 h-full">{children}</div>

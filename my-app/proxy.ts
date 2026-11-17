@@ -1,20 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-  
+import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE, verifySession } from "@/lib/sessionToken";
+
+/** App pages require a valid, signed session cookie; anyone else goes to the sign-in page. */
 export async function proxy(req: NextRequest) {
-  // Allow direct access in local development while dashboard UI is being built.
-  if (process.env.NODE_ENV === 'development') {
-    return NextResponse.next();
+  const user = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
+  if (!user) {
+    const res = NextResponse.redirect(new URL("/Login", req.url));
+    if (req.cookies.has(SESSION_COOKIE)) res.cookies.delete(SESSION_COOKIE); // expired or tampered
+    return res;
   }
-
-  const isAuthenticated = req.cookies.get('auth')?.value === '1';
-
-  if (!isAuthenticated) {
-    return NextResponse.redirect(new URL('/', req.url));
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/Notes/:path*', '/Tasks/:path*', '/Alerts/:path*', '/Focus/:path*', '/Records/:path*'],
+  matcher: ["/dashboard/:path*", "/Notes/:path*", "/Tasks/:path*", "/Alerts/:path*", "/Focus/:path*", "/Records/:path*"],
 };

@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { inputClass } from "@/app/components/kit";
-import { isPreview, supabase } from "@/lib/supabase";
-import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demoClient";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
 type Mode = "login" | "register";
@@ -35,40 +34,25 @@ export function LoginForm({ className }: { className?: string }) {
 
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          setError(
-            error.message.toLowerCase().includes("email not confirmed")
-              ? "Please confirm your email — check your inbox for a verification link."
-              : error.message
-          );
-          return;
-        }
-        router.push("/dashboard");
+        const { error } = await db.auth.signInWithPassword({ email, password });
+        if (error) { setError(error.message); return; }
+        router.replace("/dashboard");
+        router.refresh();
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await db.auth.signUp({
         email,
         password,
         options: { data: { full_name: name } },
       });
       if (error) { setError(error.message); return; }
-      if (!data.session) {
-        setInfo("Almost there — check your inbox to confirm your email, then sign in.");
-        setMode("login");
-        return;
-      }
-      router.push("/dashboard");
+      if (!data.session) { setError("Account created, but signing in failed — please sign in."); setMode("login"); return; }
+      router.replace("/dashboard");
+      router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      setError(
-        msg.includes("Missing NEXT_PUBLIC_SUPABASE")
-          ? "Sign-in isn't configured yet: add your Supabase URL and anon key to .env.local and restart the dev server."
-          : msg.toLowerCase().includes("fetch")
-            ? "Couldn't reach the server. Check your connection and Supabase URL, then try again."
-            : msg
-      );
+      setError(msg.toLowerCase().includes("fetch") ? "Couldn't reach the server. Check your connection and try again." : msg);
     } finally {
       setBusy(false);
     }
@@ -101,22 +85,6 @@ export function LoginForm({ className }: { className?: string }) {
           </button>
         ))}
       </div>
-
-      {isPreview && mode === "login" && (
-        <div className="mb-5 rounded-xl border border-dashed border-accent/40 bg-accent-soft p-4">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">preview mode</p>
-          <p className="mt-1.5 text-sm text-fg">
-            Sign in with <span className="font-medium">{DEMO_EMAIL}</span> / <span className="font-medium">{DEMO_PASSWORD}</span>, or create any account. Data stays in this browser.
-          </p>
-          <button
-            type="button"
-            onClick={() => { setEmail(DEMO_EMAIL); setPassword(DEMO_PASSWORD); setError(""); }}
-            className="mt-3 text-xs font-semibold text-accent underline-offset-4 hover:underline"
-          >
-            Fill in demo login →
-          </button>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <AnimatePresence initial={false}>
@@ -163,7 +131,7 @@ export function LoginForm({ className }: { className?: string }) {
             placeholder="Password"
             autoComplete={mode === "login" ? "current-password" : "new-password"}
             required
-            minLength={6}
+            minLength={mode === "register" ? 8 : 1}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

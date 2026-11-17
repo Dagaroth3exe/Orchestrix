@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { currentUser } from "@/lib/server/session";
 
 export async function POST(req: NextRequest) {
-  const token = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
+  if (!process.env.GEMINI_API_KEY) return NextResponse.json({ error: "AI analysis isn't configured (GEMINI_API_KEY is missing)." }, { status: 503 });
 
   const { title, content } = await req.json();
 
@@ -38,7 +36,6 @@ ${content || "(empty)"}`;
     );
 
     const data = await res.json();
-    console.log("[analyze-note] status:", res.status, "body:", JSON.stringify(data).slice(0, 500));
 
     if (!res.ok) {
       const message = data?.error?.message ?? `Gemini error ${res.status}`;

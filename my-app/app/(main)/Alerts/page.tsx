@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Bell, CheckCheck, CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { Btn, EmptyState, ErrorBanner, LoadingState, PageHeader } from "@/app/components/kit";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/db";
 import { formatRelative } from "@/lib/format";
 import type { Alert } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -26,10 +26,10 @@ export default function AlertsPage() {
 
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       if (!session) { router.push("/Login"); return; }
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("alerts")
         .select("*")
         .eq("user_id", session.user.id)
@@ -45,14 +45,14 @@ export default function AlertsPage() {
   const handleDismiss = async (id: string) => {
     const prev = alerts;
     setAlerts((a) => a.filter((x) => x.id !== id));
-    const { error } = await supabase.from("alerts").delete().eq("id", id);
+    const { error } = await db.from("alerts").delete().eq("id", id);
     if (error) { setAlerts(prev); setError(`Couldn't dismiss: ${error.message}`); }
   };
 
   const markRead = async (ids: string[]) => {
     if (!ids.length) return;
     setAlerts((a) => a.map((x) => (ids.includes(x.id) ? { ...x, read: true } : x)));
-    const { error } = await supabase.from("alerts").update({ read: true }).in("id", ids);
+    const { error } = await db.from("alerts").update({ read: true }).in("id", ids);
     if (error) setError(`Couldn't update: ${error.message}`);
   };
 

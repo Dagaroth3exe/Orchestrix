@@ -4,7 +4,6 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, BookOpen, Check, Pencil, Sparkles, Trash2, X } from "lucide-react";
 import { Btn, EmptyState } from "@/app/components/kit";
-import { isPreview, supabase } from "@/lib/supabase";
 import type { Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -24,27 +23,6 @@ interface Analysis {
   tags: string[];
   sentiment: "positive" | "neutral" | "negative";
   actionItems: string[];
-}
-
-const STOP = new Set("the a an and or but to of in on for with at by from is are was were be been it this that i my me we our you your as so if not no do have has had will just about into than then them they there their what when which who".split(" "));
-
-/** Preview-mode stand-in for the AI endpoint: a simple local heuristic. */
-function localAnalysis(title: string, content: string): Analysis {
-  const text = `${title}. ${content}`.trim();
-  const sentences = content.split(/(?<=[.!?])\s+|\n+/).map((s) => s.replace(/^[-*•]\s*/, "").trim()).filter(Boolean);
-  const words = text.toLowerCase().match(/[a-z][a-z'-]{3,}/g) ?? [];
-  const freq = new Map<string, number>();
-  words.forEach((w) => !STOP.has(w) && freq.set(w, (freq.get(w) ?? 0) + 1));
-  const tags = [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([w]) => w);
-  const pos = (text.match(/\b(good|great|well|love|happy|win|nice|calm|done)\b/gi) ?? []).length;
-  const neg = (text.match(/\b(bad|stuck|late|worried|problem|miss|tired|blocked)\b/gi) ?? []).length;
-  return {
-    summary: sentences[0] ?? (title || "This note is empty."),
-    keyPoints: sentences.slice(1, 4),
-    tags,
-    sentiment: pos > neg ? "positive" : neg > pos ? "negative" : "neutral",
-    actionItems: sentences.filter((s) => /^(call|book|send|write|try|schedule|reply|finish|ship|fix|review)\b/i.test(s)).slice(0, 3),
-  };
 }
 
 const SENTIMENT_STYLES: Record<string, string> = {
@@ -77,17 +55,10 @@ export default function NotesDetail({
     setAnalyzing(true);
     setAnalyzeError(null);
     try {
-      if (isPreview) {
-        await new Promise((r) => setTimeout(r, 700));
-        setAnalysis(localAnalysis(isEditing ? localTitle : note.title, isEditing ? localContent : note.content || note.preview || ""));
-        return;
-      }
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setAnalyzeError("Not authenticated"); return; }
-
       const res = await fetch("/api/analyze-note", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: note.title, content: isEditing ? localContent : note.content }),
       });
       const json = await res.json();

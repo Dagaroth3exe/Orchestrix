@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import TasksList from "@/app/components/TasksList";
 import TasksDetail from "@/app/components/TasksDetail";
 import { Btn, ErrorBanner, LoadingState, PageHeader } from "@/app/components/kit";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/db";
 import type { Priority, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -36,10 +36,10 @@ export default function TasksPage() {
 
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       if (!session) { router.push("/Login"); return; }
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("tasks")
         .select("*")
         .eq("user_id", session.user.id)
@@ -72,11 +72,11 @@ export default function TasksPage() {
   const handleAddTask = async () => {
     if (isAdding) return;
     setIsAdding(true);
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await db.auth.getSession();
     if (!session) { setDbError("No session — please log in again."); setIsAdding(false); return; }
 
     const dueDate = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("tasks")
       .insert({
         user_id: session.user.id,
@@ -103,7 +103,7 @@ export default function TasksPage() {
 
   const handleDeleteTask = async (id: string) => {
     if (!window.confirm("Delete this task? This cannot be undone.")) return;
-    const { error } = await supabase.from("tasks").delete().eq("id", id);
+    const { error } = await db.from("tasks").delete().eq("id", id);
     if (error) { setDbError(`Couldn't delete: ${error.message}`); return; }
     const remaining = tasks.filter((t) => t.id !== id);
     setTasks(remaining);
@@ -116,7 +116,7 @@ export default function TasksPage() {
 
   const handleSaveTask = async (updated: Task) => {
     setIsSaving(true);
-    const { error } = await supabase
+    const { error } = await db
       .from("tasks")
       .update({
         title: updated.title,
@@ -140,7 +140,7 @@ export default function TasksPage() {
     if (!task) return;
     // optimistic update, rolled back on failure
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
-    const { error } = await supabase.from("tasks").update({ completed: !task.completed }).eq("id", id);
+    const { error } = await db.from("tasks").update({ completed: !task.completed }).eq("id", id);
     if (error) {
       setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
       setDbError(`Couldn't update: ${error.message}`);

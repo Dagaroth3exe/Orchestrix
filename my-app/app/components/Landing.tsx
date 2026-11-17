@@ -7,7 +7,7 @@ import { ArrowRight, BookOpen, CheckSquare, Moon, Sun, Timer, type LucideIcon } 
 import { LoginForm } from "@/components/login-form";
 import { Wordmark } from "@/app/components/AppShell";
 import { useDarkMode } from "@/app/context/DarkMode";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -36,7 +36,7 @@ export default function Landing() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data } = await db.auth.getSession();
         setSignedIn(!!data.session);
       } catch {
         // Supabase not configured / unreachable — still show the sign-in form
@@ -113,7 +113,7 @@ export default function Landing() {
                   Continue <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <button
-                  onClick={async () => { await supabase.auth.signOut(); setSignedIn(false); }}
+                  onClick={async () => { await db.auth.signOut(); setSignedIn(false); }}
                   className="mt-3 w-full text-center text-xs text-subtle hover:text-fg"
                 >
                   Not you? Sign out

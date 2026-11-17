@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import NotesList from "@/app/components/NotesList";
 import NotesDetail from "@/app/components/NotesDetail";
 import { Btn, ErrorBanner, LoadingState, PageHeader } from "@/app/components/kit";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/db";
 import { formatRelative } from "@/lib/format";
 import type { Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -35,10 +35,10 @@ export default function NotesPage() {
 
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       if (!session) { router.push("/Login"); return; }
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("notes")
         .select("*")
         .eq("user_id", session.user.id)
@@ -70,10 +70,10 @@ export default function NotesPage() {
   const handleAddNote = async () => {
     if (isAdding) return;
     setIsAdding(true);
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await db.auth.getSession();
     if (!session) { setDbError("No session — please log in again."); setIsAdding(false); return; }
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("notes")
       .insert({ user_id: session.user.id, title: "Untitled note", preview: "", content: "" })
       .select()
@@ -94,7 +94,7 @@ export default function NotesPage() {
   const handleSaveNote = async (updated: Note) => {
     setIsSaving(true);
     const preview = (updated.content ?? "").slice(0, 80) || updated.title;
-    const { error } = await supabase
+    const { error } = await db
       .from("notes")
       .update({
         title: updated.title,
@@ -118,7 +118,7 @@ export default function NotesPage() {
 
   const handleDeleteNote = async (id: string) => {
     if (!window.confirm("Delete this note? This cannot be undone.")) return;
-    const { error } = await supabase.from("notes").delete().eq("id", id);
+    const { error } = await db.from("notes").delete().eq("id", id);
     if (error) { setDbError(`Couldn't delete: ${error.message}`); return; }
     const remaining = notes.filter((n) => n.id !== id);
     setNotes(remaining);

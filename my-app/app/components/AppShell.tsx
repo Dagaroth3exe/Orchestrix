@@ -16,7 +16,6 @@ import {
   Moon,
   Music2,
   VolumeX,
-  RotateCcw,
   Search,
   Sun,
   Timer,
@@ -25,8 +24,7 @@ import {
 import ShortBlackLogo from "@/app/Assets/Short black logo.png";
 import { NoteMark } from "@/app/components/kit";
 import { useDarkMode } from "@/app/context/DarkMode";
-import { isPreview, supabase } from "@/lib/supabase";
-import { resetPreviewData } from "@/lib/demoClient";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { isSoundOn, setSoundOn, sfx, subscribeSound, unlockAudio } from "@/lib/sound";
 
@@ -49,11 +47,11 @@ function useProfileAndAlerts(pathname: string) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       if (!session || cancelled) return;
       const meta = session.user.user_metadata ?? {};
       setProfile({ name: meta.full_name ?? meta.name ?? "", email: session.user.email ?? "" });
-      const { count } = await supabase
+      const { count } = await db
         .from("alerts")
         .select("id", { count: "exact", head: true })
         .eq("user_id", session.user.id)
@@ -127,11 +125,11 @@ function GlobalSearch() {
   const load = async () => {
     setOpen(true);
     if (items) return;
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await db.auth.getSession();
     if (!session) return;
     const [n, t] = await Promise.all([
-      supabase.from("notes").select("id, title").eq("user_id", session.user.id),
-      supabase.from("tasks").select("id, title").eq("user_id", session.user.id),
+      db.from("notes").select("id, title").eq("user_id", session.user.id),
+      db.from("tasks").select("id, title").eq("user_id", session.user.id),
     ]);
     setItems([
       ...(n.data ?? []).map((r) => ({ id: r.id, title: r.title, kind: "note" as const })),
@@ -230,7 +228,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [menuOpen]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await db.auth.signOut();
     router.push("/Login");
   };
 
@@ -255,11 +253,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* left: brand */}
         <Link href="/" aria-label="Orchestrix home" className="flex items-center gap-2.5 justify-self-start pl-1">
           <Wordmark />
-          {isPreview && (
-            <span className="hidden rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-accent 2xl:inline">
-              preview
-            </span>
-          )}
         </Link>
 
         {/* centre: nav */}
@@ -359,20 +352,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <p className="truncate font-semibold text-fg">{profile?.name || "Your account"}</p>
                     <p className="truncate text-xs text-muted">{profile?.email}</p>
                   </div>
-                  {isPreview && (
-                    <button
-                      onClick={async () => {
-                        if (!window.confirm("Reset all preview data to the sample set?")) return;
-                        await supabase.auth.signOut();
-                        resetPreviewData();
-                        router.push("/");
-                      }}
-                      className="flex w-full items-center gap-3 border-t border-line px-4 py-3 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-fg"
-                    >
-                      <RotateCcw className="size-4" />
-                      Reset preview data
-                    </button>
-                  )}
                   <button
                     onClick={signOut}
                     className="flex w-full items-center gap-3 border-t border-line px-4 py-3 text-sm font-medium text-danger transition-colors hover:bg-danger-soft"
